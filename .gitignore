@@ -1,0 +1,7 @@
+# Produktinhalte und interne Projektnotizen bleiben lokal.
+# Oeffentlich ist nur der Ordner site/ (Landingpages + Rechner).
+content/
+CLAUDE.md
+*.xlsx
+~$*
+.DS_Store

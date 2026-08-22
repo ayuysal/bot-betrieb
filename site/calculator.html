@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI Calculator — Bot Operations</title>
+<meta name="description" content="Run the 10 support bot KPIs right in your browser: deflection rate, CSAT, recontact rate, cost per conversation — each with its target range and the mistake people make reading it.">
+<meta property="og:title" content="KPI Calculator — Bot Operations">
+<meta property="og:description" content="The 10 support bot KPIs, calculated live. Free, no signup.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400..700;125,500..700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F7F4;
+  --card:#FFFFFF;
+  --ink:#14231F;
+  --ink-soft:#4A5A54;
+  --ink-faint:#7B8A84;
+  --petrol:#16655A;
+  --petrol-deep:#0D453D;
+  --petrol-tint:#E3EFEC;
+  --amber:#C97F10;
+  --amber-tint:#FBF1DE;
+  --red:#A32020;
+  --red-tint:#FBE8E8;
+  --line:#DCE1DA;
+  --radius:10px;
+  --maxw:1160px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Instrument Sans',system-ui,sans-serif;
+  background:var(--paper);color:var(--ink);
+  font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+header{
+  position:sticky;top:0;z-index:50;background:rgba(246,247,244,.92);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+}
+.nav{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Archivo',sans-serif;font-weight:600;font-size:17px;letter-spacing:-.01em;text-decoration:none;color:var(--ink)}
+.logo-mark{width:26px;height:26px;border-radius:7px;background:var(--petrol);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{color:var(--ink-soft);text-decoration:none;font-size:14.5px;font-weight:500}
+.nav-links a:hover{color:var(--ink)}
+.btn{display:inline-block;background:var(--petrol);color:#fff;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;border:none;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn:hover{background:var(--petrol-deep)}
+.btn.ghost{background:transparent;color:var(--petrol);border:1.5px solid var(--petrol)}
+.btn.ghost:hover{background:var(--petrol-tint)}
+.btn.small{padding:8px 16px;font-size:14px}
+
+.intro{padding:52px 0 30px;max-width:660px}
+.eyebrow{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--petrol);background:var(--petrol-tint);padding:5px 12px;border-radius:999px;margin-bottom:18px;letter-spacing:.02em}
+h1{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 118;font-weight:650;font-size:clamp(30px,3.8vw,44px);line-height:1.1;letter-spacing:-.02em;margin-bottom:16px}
+h1 em{font-style:normal;color:var(--petrol)}
+.intro p{font-size:17px;color:var(--ink-soft)}
+
+.layout{display:grid;grid-template-columns:360px 1fr;gap:28px;align-items:start;padding-bottom:70px}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;position:sticky;top:88px}
+.panel h2{font-family:'Archivo',sans-serif;font-size:18px;font-weight:650;margin-bottom:4px}
+.panel .phint{font-size:13px;color:var(--ink-faint);margin-bottom:18px}
+.group{margin-bottom:18px}
+.group>b{display:block;font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--petrol);padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0}
+.field label{font-size:13.5px;color:var(--ink-soft);line-height:1.35}
+.field input{
+  width:104px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:13.5px;
+  text-align:right;padding:7px 9px;border:1px solid var(--line);border-radius:7px;
+  background:var(--paper);color:var(--ink);
+}
+.field input:focus{outline:2px solid var(--petrol);outline-offset:-1px;background:#fff}
+.field input.bad{border-color:var(--red);background:var(--red-tint)}
+.panel-foot{display:flex;gap:10px;margin-top:6px}
+
+.results{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.kcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;display:flex;flex-direction:column}
+.kcard-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+.kcard-top .crumb{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint)}
+.status{font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.status.ok{color:var(--petrol);background:var(--petrol-tint)}
+.status.off{color:#8A5606;background:var(--amber-tint)}
+.status.na{color:var(--ink-faint);background:var(--paper)}
+.kcard h3{font-family:'Archivo',sans-serif;font-size:19px;font-weight:650;letter-spacing:-.01em}
+.kcard .sub{font-size:13px;color:var(--ink-soft);margin-bottom:14px}
+.valrow{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.val{font-family:'Archivo',sans-serif;font-size:34px;font-weight:650;letter-spacing:-.02em;line-height:1}
+.val.off{color:var(--amber)}
+.val.na{color:var(--ink-faint);font-size:24px}
+.target{font-size:12.5px;color:var(--ink-faint)}
+.formula{background:var(--paper);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.formula .lbl{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.formula .code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;word-break:break-word}
+.warnbox{display:flex;gap:9px;background:var(--amber-tint);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#8A5606;line-height:1.5;margin-bottom:12px}
+.warnbox svg{flex-shrink:0;margin-top:3px}
+.krel{display:flex;gap:7px;flex-wrap:wrap;margin-top:auto}
+.pill{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--ink-soft)}
+
+.extras{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-top:16px}
+.extras h3{font-family:'Archivo',sans-serif;font-size:17px;font-weight:650;margin-bottom:4px}
+.extras .ehint{font-size:13px;color:var(--ink-faint);margin-bottom:14px}
+.extras table{width:100%;border-collapse:collapse}
+.extras td{padding:9px 0;border-top:1px solid var(--line);font-size:14px;vertical-align:top}
+.extras td:last-child{text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap;font-weight:500}
+.extras td small{display:block;color:var(--ink-faint);font-size:12px;line-height:1.4;font-family:'Instrument Sans',sans-serif}
+
+.quartet{background:var(--petrol-tint);border-radius:14px;padding:20px 22px;margin-top:16px;font-size:14px;color:#0D453D}
+.quartet b{display:block;font-family:'Archivo',sans-serif;font-size:16px;margin-bottom:5px}
+
+.band{background:var(--ink);color:#fff;border-radius:14px;padding:28px 30px;margin-top:16px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.band h3{font-family:'Archivo',sans-serif;font-size:20px;font-weight:650;margin-bottom:4px}
+.band p{color:#B7C4BF;font-size:14.5px;max-width:52ch}
+
+footer{border-top:1px solid var(--line);padding:26px 0;font-size:13px;color:var(--ink-faint)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--ink-faint);text-decoration:none;margin-left:16px}
+footer a:hover{color:var(--ink)}
+
+@media (max-width:960px){
+  .layout{grid-template-columns:1fr}
+  .panel{position:static}
+  .results{grid-template-columns:1fr}
+  .nav-links a:not(.btn):not(.lang){display:none}
+}
+@media print{
+  header,.panel-foot,.band,.nav{display:none}
+  .layout{grid-template-columns:1fr}
+  .kcard,.panel,.extras{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index-en.html"><span class="logo-mark">kΦ</span> Bot Operations</a>
+    <nav class="nav-links">
+      <a href="index-en.html#modules">Modules</a>
+      <a href="index-en.html#pricing">Pricing</a>
+      <a href="index-en.html#faq">FAQ</a>
+      <a class="lang" href="rechner.html" aria-label="Deutsche Version">DE</a>
+      <a href="index-en.html#pricing" class="btn small">Get the framework</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="intro">
+    <span class="eyebrow">Free · no signup · Module 2</span>
+    <h1>The <em>KPI calculator</em> for your support bot.</h1>
+    <p>Drop in the raw numbers from your reporting and the 10 KPIs calculate as you type — each with its target range and the misreading that goes with it. Nothing leaves your browser; your inputs stay on this device.</p>
+  </div>
+
+  <div class="layout">
+    <form class="panel" id="form" autocomplete="off">
+      <h2>Inputs</h2>
+      <p class="phint">Pre-filled with a fictional sample month. Type over the numbers with your own.</p>
+      <div id="fields"></div>
+      <div class="panel-foot">
+        <button type="button" class="btn small ghost" onclick="resetAll()">Reset to sample</button>
+        <button type="button" class="btn small ghost" onclick="window.print()">Print</button>
+      </div>
+    </form>
+
+    <div>
+      <div class="results" id="results"></div>
+
+      <div class="extras">
+        <h3>Supporting figures</h3>
+        <p class="ehint">From the same inputs — the numbers that belong next to the KPIs in any report.</p>
+        <table id="extras"></table>
+      </div>
+
+      <div class="quartet">
+        <b>The four that are always read together</b>
+        Deflection rate never gets reported without CSAT, recontact rate and escalation rate. Any gain in deflection can come out of one of the other three — if one number climbs while another slips, the gain is borrowed.
+      </div>
+
+      <div class="band">
+        <div>
+          <h3>The full pages come with the framework.</h3>
+          <p>One page per KPI: definition, target range, the complete misreading, and the fill-in sheet across 12 months.</p>
+        </div>
+        <a class="btn" href="index-en.html#pricing">See the framework</a>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Bot Operations · All example figures are fictional</span>
+    <span>
+      <a href="index-en.html">Home</a>
+      <a href="rechner.html">Deutsch</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+var GROUPS = [
+  ["Volume", [
+    ["sessions",   "Bot sessions, total", 4200],
+    ["andere",     "Contacts on all other channels", 6800],
+    ["inhaltlich", "Sessions with a substantive answer", 3780],
+    ["geloest",    "Sessions counted as resolved", 2310],
+    ["uebergaben", "Handovers to a human", 1470],
+    ["geplant",    "of which planned handovers", 620],
+    ["wieder",     "Recontacts within 7 days", 265],
+    ["luecken",    "Sessions with no matching content", 378]
+  ]],
+  ["Ratings", [
+    ["bew",        "Ratings submitted", 520],
+    ["bewPos",     "of which positive (4–5)", 402],
+    ["bewErg",     "of which negative about the outcome", 41]
+  ]],
+  ["Test set", [
+    ["tests",      "Test cases run", 240],
+    ["testsOk",    "of which factually correct", 228],
+    ["testsHal",   "Cases with invented facts", 3]
+  ]],
+  ["Time", [
+    ["dauerBot",   "Median bot session length (min)", 3.2],
+    ["dauerMensch","Median human handling time (min)", 11.4]
+  ]],
+  ["Cost", [
+    ["kPlattform", "Platform cost ($)", 1800],
+    ["kApi",       "Model / API cost ($)", 640],
+    ["kStunden",   "Upkeep effort (hours)", 16],
+    ["kSatz",      "Internal hourly rate ($)", 150],
+    ["kMensch",    "Cost of one human contact ($)", 7.40]
+  ]]
+];
+
+var WARN = {
+  1:"This measures where you point people, not how good the bot is. It can be inflated by hiding your other channels — CSAT and recontacts then slip two weeks later.",
+  2:"An answer is not a resolution. On LLM-based bots this climbs to nearly 100% on its own, at which point it only tracks how often the model stayed silent.",
+  3:"Worthless without a CSAT check: a bot that brushes people off instead of solving pushes this up too. What matters is how you define \"resolved\".",
+  4:"Not a failure rate. Planned escalation is good design — only the unplanned share is a backlog item. A rate near 0% means the exit is missing.",
+  5:"Not a sign of loyalty — it is the correction to your deflection rate. Put the time window and the matching logic in every report line.",
+  6:"Never read it without the response rate and the sample size: satisfied users rarely rate, annoyed ones almost always do. Many rate the outcome, not the bot.",
+  7:"This comes from the test set, not from live data. An average across languages hides the weakest one.",
+  8:"Shorter is not better — the shortest sessions are abandonments. Use the median, not the mean, and only over resolved sessions.",
+  9:"Without upkeep effort this is a sales argument, not a cost figure. The saving only lands when capacity is actually re-planned.",
+  10:"Not a bot failure — it is next week's content plan. On LLM bots gaps form invisibly, so feed this from sampling and the test set too."
+};
+
+var KPIS = [
+  {nr:1, name:"Coverage", sub:"Share of contacts that start in the bot", unit:"%",
+   min:25, max:60, rel:["Deflection rate","Cost per conversation","Escalation rate"],
+   f:function(v){return pct(v.sessions, v.sessions+v.andere);},
+   fx:function(v){return num(v.sessions)+" ÷ ("+num(v.sessions)+" + "+num(v.andere)+") × 100";}},
+
+  {nr:2, name:"Answer rate", sub:"Sessions with a substantive answer, not a fallback", unit:"%",
+   min:80, max:92, rel:["Knowledge gap rate","Answer accuracy","Deflection rate"],
+   f:function(v){return pct(v.inhaltlich, v.sessions);},
+   fx:function(v){return num(v.inhaltlich)+" ÷ "+num(v.sessions)+" × 100";}},
+
+  {nr:3, name:"Deflection rate", sub:"Requests the bot closes without a human", unit:"%",
+   min:40, max:60, rel:["CSAT","Escalation rate","Recontact rate"],
+   f:function(v){return pct(v.geloest, v.sessions);},
+   fx:function(v){return num(v.geloest)+" ÷ "+num(v.sessions)+" × 100";}},
+
+  {nr:4, name:"Escalation rate", sub:"Sessions handed over to a human", unit:"%",
+   min:20, max:40, rel:["Deflection rate","Knowledge gap rate","CSAT"],
+   f:function(v){return pct(v.uebergaben, v.sessions);},
+   fx:function(v){return num(v.uebergaben)+" ÷ "+num(v.sessions)+" × 100";}},
+
+  {nr:5, name:"Recontact rate", sub:"Same issue raised again within 7 days", unit:"%",
+   min:0, max:15, rel:["Deflection rate","Answer accuracy","CSAT"],
+   f:function(v){return pct(v.wieder, v.geloest);},
+   fx:function(v){return num(v.wieder)+" ÷ "+num(v.geloest)+" × 100";}},
+
+  {nr:6, name:"Bot CSAT", sub:"Share of satisfied ratings", unit:"%",
+   min:70, max:100, rel:["Deflection rate","Escalation rate","Recontact rate"],
+   f:function(v){return pct(v.bewPos, v.bew);},
+   fx:function(v){return num(v.bewPos)+" ÷ "+num(v.bew)+" × 100";}},
+
+  {nr:7, name:"Answer accuracy", sub:"Factually correct answers in the test set", unit:"%",
+   min:95, max:100, rel:["Test methodology","Answer rate","Recontact rate"],
+   f:function(v){return pct(v.testsOk, v.tests);},
+   fx:function(v){return num(v.testsOk)+" ÷ "+num(v.tests)+" × 100";}},
+
+  {nr:8, name:"Time to resolution", sub:"Median across resolved bot sessions", unit:"min",
+   min:2, max:5, rel:["Deflection rate","Escalation rate","Cost per conversation"],
+   f:function(v){return v.dauerBot>0 ? v.dauerBot : null;},
+   fx:function(v){return "median session length (input)";}},
+
+  {nr:9, name:"Cost per conversation", sub:"Fully loaded, upkeep included", unit:"$",
+   min:0, max:null, rel:["Deflection rate","Coverage","Time to resolution"],
+   f:function(v){return v.sessions>0 ? (v.kPlattform+v.kApi+v.kStunden*v.kSatz)/v.sessions : null;},
+   fx:function(v){return "("+num(v.kPlattform)+" + "+num(v.kApi)+" + "+num(v.kStunden)+" × "+num(v.kSatz)+") ÷ "+num(v.sessions);},
+   maxFn:function(v){return 0.3*v.kMensch;},
+   maxLabel:function(v){return "≤ "+usd(0.3*v.kMensch)+" (30% of a human contact)";}},
+
+  {nr:10, name:"Knowledge gap rate", sub:"Sessions on topics with no content behind them", unit:"%",
+   min:0, max:10, rel:["Answer rate","Answer accuracy","Escalation rate"],
+   f:function(v){return pct(v.luecken, v.sessions);},
+   fx:function(v){return num(v.luecken)+" ÷ "+num(v.sessions)+" × 100";}}
+];
+
+var EXTRAS = [
+  {name:"Deflection rate, adjusted", note:"Net of recontacts — this is the number that belongs in the report, not the raw one.",
+   f:function(v){return fmtPct(pct(v.geloest-v.wieder, v.sessions));}},
+  {name:"Unplanned escalation rate", note:"Only this share is a backlog item.",
+   f:function(v){return fmtPct(pct(v.uebergaben-v.geplant, v.sessions));}},
+  {name:"Rating response rate", note:"Always sits next to CSAT. Below 5% your CSAT is an anecdote with a percent sign.",
+   f:function(v){return fmtPct(pct(v.bew, v.sessions));}},
+  {name:"Bot-attributable CSAT", note:"Excluding ratings that were about the outcome rather than the bot.",
+   f:function(v){return fmtPct(pct(v.bewPos, v.bew-v.bewErg));}},
+  {name:"Hallucination rate in the test set", note:"Zero tolerance — every case goes into the backlog at priority 1.",
+   f:function(v){return fmtPct(pct(v.testsHal, v.tests));}},
+  {name:"Handling time avoided", note:"Report it in hours, not dollars — whether it becomes a saving is a staffing decision.",
+   f:function(v){return v.dauerMensch>0 ? num(Math.round(v.geloest*v.dauerMensch/60))+" h" : "—";}},
+  {name:"Total bot cost for the period", note:"Platform + model + upkeep.",
+   f:function(v){return usd(v.kPlattform+v.kApi+v.kStunden*v.kSatz);}}
+];
+
+function pct(a,b){ return (b>0 && isFinite(a/b)) ? (a/b)*100 : null; }
+function num(n){
+  if(n===null||isNaN(n)) return "—";
+  var s = (Math.round(n*100)/100).toString().split(".");
+  return s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (s[1] ? "."+s[1] : "");
+}
+function fmtPct(x){ return x===null ? "—" : num(Math.round(x*10)/10)+"%"; }
+function usd(x){ return x===null ? "—" : "$"+num(Math.round(x*100)/100); }
+
+var KEY = "bot-operations-calculator-v1";
+var vals = {};
+
+function defaults(){
+  var d = {};
+  GROUPS.forEach(function(g){ g[1].forEach(function(f){ d[f[0]] = f[2]; }); });
+  return d;
+}
+
+function buildForm(){
+  var host = document.getElementById("fields"), html = "";
+  GROUPS.forEach(function(g){
+    html += '<div class="group"><b>'+g[0]+'</b>';
+    g[1].forEach(function(f){
+      html += '<div class="field"><label for="i_'+f[0]+'">'+f[1]+'</label>'+
+              '<input id="i_'+f[0]+'" type="number" min="0" step="any" inputmode="decimal" data-k="'+f[0]+'"></div>';
+    });
+    html += '</div>';
+  });
+  host.innerHTML = html;
+  host.addEventListener("input", function(e){
+    var k = e.target.getAttribute("data-k");
+    if(!k) return;
+    var n = parseFloat(e.target.value);
+    vals[k] = isNaN(n) ? 0 : n;
+    save(); render();
+  });
+}
+
+function fillForm(){
+  Object.keys(vals).forEach(function(k){
+    var el = document.getElementById("i_"+k);
+    if(el) el.value = vals[k];
+  });
+}
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(vals)); }catch(e){} }
+function load(){
+  var d = defaults();
+  try{
+    var s = localStorage.getItem(KEY);
+    if(s){ var o = JSON.parse(s); Object.keys(d).forEach(function(k){ if(typeof o[k]==="number") d[k]=o[k]; }); }
+  }catch(e){}
+  vals = d;
+}
+function resetAll(){ vals = defaults(); save(); fillForm(); render(); }
+
+function plausibility(){
+  var pairs = [["inhaltlich","sessions"],["geloest","sessions"],["uebergaben","sessions"],
+               ["geplant","uebergaben"],["wieder","geloest"],["luecken","sessions"],
+               ["bewPos","bew"],["bewErg","bew"],["testsOk","tests"],["testsHal","tests"]];
+  var bad = {};
+  pairs.forEach(function(p){ if(vals[p[0]] > vals[p[1]]) bad[p[0]] = true; });
+  Object.keys(vals).forEach(function(k){
+    var el = document.getElementById("i_"+k);
+    if(el) el.classList.toggle("bad", !!bad[k]);
+  });
+}
+
+var ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C97F10" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+
+function render(){
+  plausibility();
+  var out = "";
+  KPIS.forEach(function(k){
+    var v = k.f(vals);
+    var max = k.maxFn ? k.maxFn(vals) : k.max;
+    var disp, cls, status, statusCls;
+    if(v === null){
+      disp = "no data"; cls = "na"; status = "input missing"; statusCls = "na";
+    }else{
+      disp = k.unit === "$" ? usd(v) : (k.unit === "min" ? num(Math.round(v*10)/10)+" min" : fmtPct(v));
+      var low = (k.min !== null && v < k.min), high = (max !== null && v > max);
+      cls = (low||high) ? "off" : "";
+      status = low ? "below target" : (high ? "above target" : "on target");
+      statusCls = (low||high) ? "off" : "ok";
+    }
+    var tgt = k.maxLabel ? k.maxLabel(vals)
+            : (k.unit === "min" ? k.min+"–"+k.max+" min" : "target "+k.min+"–"+k.max+"%");
+    out += '<div class="kcard">'+
+      '<div class="kcard-top"><span class="crumb">KPI '+k.nr+'/10</span>'+
+      '<span class="status '+statusCls+'">'+status+'</span></div>'+
+      '<h3>'+k.name+'</h3><p class="sub">'+k.sub+'</p>'+
+      '<div class="valrow"><span class="val '+cls+'">'+disp+'</span><span class="target">'+tgt+'</span></div>'+
+      '<div class="formula"><div class="lbl">Calculation</div><div class="code">'+k.fx(vals)+'</div></div>'+
+      '<div class="warnbox">'+ICON+'<span>'+WARN[k.nr]+'</span></div>'+
+      '<div class="krel">'+k.rel.map(function(r){return '<span class="pill">'+r+'</span>';}).join("")+'</div>'+
+      '</div>';
+  });
+  document.getElementById("results").innerHTML = out;
+
+  var rows = "";
+  EXTRAS.forEach(function(e){
+    rows += '<tr><td>'+e.name+'<small>'+e.note+'</small></td><td>'+e.f(vals)+'</td></tr>';
+  });
+  document.getElementById("extras").innerHTML = rows;
+}
+
+buildForm();
+load();
+fillForm();
+render();
+</script>
+</body>
+</html>

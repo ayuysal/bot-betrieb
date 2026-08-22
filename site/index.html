@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bot-Betrieb — Das Praxis-Framework für Support-Bots</title>
+<meta name="description" content="Das komplette Playbook für Einführung, Messung und Betrieb von Support-Bots: Bauplan, die 10 Kennzahlen, die zählen, und Testset-Methodik für mehrsprachige Bots.">
+<meta property="og:title" content="Bot-Betrieb — Das Praxis-Framework für Support-Bots">
+<meta property="og:description" content="Support-Bots einführen, messen und am Leben halten. Aus 7+ Jahren Praxis im Bot-Betrieb.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400..700;125,500..700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F7F4;
+  --card:#FFFFFF;
+  --ink:#14231F;
+  --ink-soft:#4A5A54;
+  --ink-faint:#7B8A84;
+  --petrol:#16655A;
+  --petrol-deep:#0D453D;
+  --petrol-tint:#E3EFEC;
+  --amber:#C97F10;
+  --amber-tint:#FBF1DE;
+  --line:#DCE1DA;
+  --radius:10px;
+  --maxw:1080px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Instrument Sans',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:16px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.disp{font-family:'Archivo',sans-serif}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(246,247,244,.92);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Archivo',sans-serif;font-weight:600;font-size:17px;letter-spacing:-.01em}
+.logo-mark{
+  width:26px;height:26px;border-radius:7px;background:var(--petrol);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;
+}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--ink-soft);text-decoration:none;font-size:14.5px;font-weight:500}
+.nav-links a:hover{color:var(--ink)}
+.btn{
+  display:inline-block;background:var(--petrol);color:#fff;
+  padding:11px 22px;border-radius:8px;text-decoration:none;
+  font-weight:600;font-size:15px;border:none;cursor:pointer;
+  transition:background .15s;
+}
+.btn:hover{background:var(--petrol-deep)}
+.btn.ghost{background:transparent;color:var(--petrol);border:1.5px solid var(--petrol)}
+.btn.ghost:hover{background:var(--petrol-tint)}
+.btn.small{padding:8px 16px;font-size:14px}
+
+/* ---------- hero ---------- */
+.hero{padding:72px 0 80px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.eyebrow{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+  color:var(--petrol);background:var(--petrol-tint);
+  padding:5px 12px;border-radius:999px;margin-bottom:20px;letter-spacing:.02em;
+}
+h1{
+  font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 118;
+  font-weight:650;font-size:clamp(34px,4.4vw,52px);
+  line-height:1.08;letter-spacing:-.02em;margin-bottom:20px;
+}
+h1 em{font-style:normal;color:var(--petrol)}
+.hero p.lead{font-size:18px;color:var(--ink-soft);max-width:46ch;margin-bottom:30px}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hero-note{font-size:13px;color:var(--ink-faint);margin-top:14px}
+
+/* Kennzahl-Karte (Signatur-Element) */
+.kcard{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:26px 28px;box-shadow:0 18px 40px -24px rgba(20,35,31,.25);
+  position:relative;
+}
+.kcard-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.kcard-top .crumb{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint)}
+.tag{
+  font-size:11.5px;font-weight:600;color:var(--petrol);
+  background:var(--petrol-tint);padding:3px 10px;border-radius:999px;
+}
+.kcard h3{font-family:'Archivo',sans-serif;font-size:24px;font-weight:650;letter-spacing:-.01em}
+.kcard .sub{font-size:13.5px;color:var(--ink-soft);margin-bottom:16px}
+.formula{
+  background:var(--paper);border-radius:8px;padding:12px 14px;margin-bottom:16px;
+}
+.formula .lbl{font-size:11.5px;color:var(--ink-faint);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.formula .code{font-family:'IBM Plex Mono',monospace;font-size:13.5px}
+.kstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.kstat{background:var(--paper);border-radius:8px;padding:10px 14px}
+.kstat .lbl{font-size:11.5px;color:var(--ink-faint)}
+.kstat .val{font-family:'Archivo',sans-serif;font-size:21px;font-weight:650}
+.warnbox{
+  display:flex;gap:10px;background:var(--amber-tint);border-radius:8px;
+  padding:11px 14px;font-size:13.5px;color:#8A5606;margin-bottom:16px;line-height:1.5;
+}
+.warnbox svg{flex-shrink:0;margin-top:2px}
+.krel{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 12px;color:var(--ink-soft)}
+.kcard-foot{
+  border-top:1px solid var(--line);margin-top:18px;padding-top:12px;
+  font-size:12px;color:var(--ink-faint);display:flex;justify-content:space-between;
+}
+.kcard .corner{
+  position:absolute;top:-14px;right:22px;background:var(--ink);color:#fff;
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:5px 12px;border-radius:999px;
+}
+
+/* ---------- proof strip ---------- */
+.strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--card)}
+.strip .wrap{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:26px 24px;
+}
+.strip .item{display:flex;gap:14px;align-items:flex-start}
+.strip .num{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--petrol);
+  background:var(--petrol-tint);border-radius:7px;width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:500;
+}
+.strip b{display:block;font-size:15px;font-weight:600}
+.strip span{font-size:13.5px;color:var(--ink-soft)}
+
+/* ---------- sections ---------- */
+section{padding:76px 0}
+.sec-head{max-width:640px;margin-bottom:44px}
+.sec-head .eyebrow{margin-bottom:14px}
+h2{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 114;
+  font-weight:650;font-size:clamp(26px,3vw,36px);line-height:1.15;
+  letter-spacing:-.015em;margin-bottom:12px;
+}
+.sec-head p{color:var(--ink-soft);font-size:16.5px}
+
+/* Module */
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.mod{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:26px;display:flex;flex-direction:column;transition:transform .15s, box-shadow .15s;
+}
+.mod:hover{transform:translateY(-3px);box-shadow:0 14px 30px -20px rgba(20,35,31,.3)}
+.mod .mnum{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-faint);margin-bottom:14px}
+.mod h3{font-family:'Archivo',sans-serif;font-size:19px;font-weight:650;margin-bottom:8px}
+.mod p{font-size:14.5px;color:var(--ink-soft);flex:1}
+.mod ul{list-style:none;margin-top:16px;font-size:13.5px}
+.mod li{padding:7px 0;border-top:1px dashed var(--line);color:var(--ink);display:flex;gap:8px;align-items:baseline}
+.mod li::before{content:"›";color:var(--petrol);font-weight:600}
+.mod .mfoot{margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--petrol)}
+
+/* Zielgruppe */
+.who{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.who-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px}
+.who-card h3{font-size:16.5px;font-weight:600;margin-bottom:6px;display:flex;gap:10px;align-items:center}
+.who-card h3 .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.who-card p{font-size:14.5px;color:var(--ink-soft)}
+
+/* Preise */
+.prices{display:grid;grid-template-columns:1fr 1.15fr;gap:20px;max-width:780px}
+.price{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px;
+  display:flex;flex-direction:column;
+}
+.price.featured{border:2px solid var(--petrol);position:relative}
+.price .badge{
+  position:absolute;top:-13px;left:26px;background:var(--petrol);color:#fff;
+  font-size:12px;font-weight:600;padding:4px 14px;border-radius:999px;
+}
+.price h3{font-family:'Archivo',sans-serif;font-size:19px;font-weight:650;margin-bottom:4px}
+.price .psub{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px}
+.price .amount{font-family:'Archivo',sans-serif;font-size:38px;font-weight:650;letter-spacing:-.02em}
+.price .amount small{font-size:15px;font-weight:500;color:var(--ink-faint)}
+.price ul{list-style:none;margin:20px 0 24px;font-size:14px;flex:1}
+.price li{padding:7px 0;display:flex;gap:10px;align-items:baseline}
+.price li::before{content:"✓";color:var(--petrol);font-weight:700;font-size:13px}
+.price li.no::before{content:"—";color:var(--ink-faint)}
+.price li.no{color:var(--ink-faint)}
+
+/* FAQ */
+.faq{max-width:720px}
+details{border-bottom:1px solid var(--line);padding:4px 0}
+summary{
+  cursor:pointer;font-weight:600;font-size:15.5px;padding:15px 0;
+  list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:'IBM Plex Mono',monospace;color:var(--petrol);font-size:18px;flex-shrink:0}
+details[open] summary::after{content:"–"}
+details p{font-size:14.5px;color:var(--ink-soft);padding-bottom:16px;max-width:60ch}
+
+/* CTA-Band */
+.band{background:var(--ink);border-radius:18px;padding:52px 48px;color:#fff;
+  display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
+.band h2{color:#fff;margin-bottom:8px}
+.band p{color:#B8C4BF;font-size:15.5px;max-width:48ch}
+.band .btn{background:#fff;color:var(--ink)}
+.band .btn:hover{background:#E7EBE6}
+
+/* Footer */
+footer{border-top:1px solid var(--line);padding:34px 0 44px;margin-top:76px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--ink-faint)}
+footer a{color:var(--ink-soft);text-decoration:none;margin-left:18px}
+
+/* ---------- Beratungsbot ---------- */
+.bot-fab{
+  position:fixed;bottom:22px;right:22px;z-index:90;
+  width:56px;height:56px;border-radius:50%;background:var(--petrol);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 26px -8px rgba(13,69,61,.55);transition:transform .15s;
+}
+.bot-fab:hover{transform:scale(1.06)}
+.bot-panel{
+  position:fixed;bottom:90px;right:22px;z-index:90;width:min(360px,calc(100vw - 32px));
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 24px 60px -20px rgba(20,35,31,.4);
+  display:none;flex-direction:column;overflow:hidden;
+}
+.bot-panel.open{display:flex}
+.bot-head{background:var(--petrol);color:#fff;padding:14px 18px}
+.bot-head b{font-size:15px;display:block}
+.bot-head span{font-size:12px;color:#BFDCD5}
+.bot-msgs{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto}
+.msg{font-size:13.5px;line-height:1.5;padding:10px 14px;border-radius:12px;max-width:88%}
+.msg.bot{background:var(--paper);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.user{background:var(--petrol);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bot-quick{padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
+.qbtn{
+  text-align:left;font-size:13px;font-weight:500;padding:9px 14px;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);border-radius:999px;color:var(--petrol);
+  transition:background .12s;font-family:inherit;
+}
+.qbtn:hover{background:var(--petrol-tint)}
+.bot-foot{font-size:11px;color:var(--ink-faint);text-align:center;padding:8px;border-top:1px solid var(--line)}
+
+/* Responsive */
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;gap:44px;padding:48px 0 60px}
+  .strip .wrap{grid-template-columns:1fr;gap:18px}
+  .mods{grid-template-columns:1fr}
+  .who{grid-template-columns:1fr}
+  .prices{grid-template-columns:1fr}
+  .nav-links a:not(.btn){display:none}
+  .band{padding:38px 28px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important;scroll-behavior:auto}
+}
+:focus-visible{outline:2.5px solid var(--petrol);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="logo-mark">kΦ</span> Bot-Betrieb</div>
+    <nav class="nav-links">
+      <a href="#module">Module</a>
+      <a href="#beispiel">Beispielseite</a>
+      <a href="rechner.html">Rechner</a>
+      <a href="#preis">Preis</a>
+      <a href="#faq">Fragen</a>
+      <a href="index-en.html" aria-label="English version">EN</a>
+      <a href="#preis" class="btn small">Framework holen</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <span class="eyebrow">Aus 7 Jahren Bot-Betrieb — nicht aus dem Lehrbuch</span>
+      <h1>Support-Bots einführen, <em>messen</em> und am Leben halten.</h1>
+      <p class="lead">Das Praxis-Framework für alle, die einen Firmen-Chatbot verantworten sollen: der komplette Bauplan, die 10 Kennzahlen, die wirklich zählen, und die Testset-Methodik für den mehrsprachigen Betrieb.</p>
+      <div class="hero-ctas">
+        <a class="btn" href="#preis">Framework holen — CHF 89</a>
+        <a class="btn ghost" href="#beispiel">Beispielseite ansehen</a>
+      </div>
+      <p class="hero-note">Sofort-Download · PDF + Berechnungs-Sheet · Beispielzahlen fiktiv</p>
+    </div>
+
+    <div class="kcard" aria-label="Beispielseite aus dem Framework: Kennzahl Ablenkrate">
+      <span class="corner">Seite aus Modul 2</span>
+      <div class="kcard-top">
+        <span class="crumb">Modul 2 · Kennzahl 3/10</span>
+        <span class="tag">Kernmetrik</span>
+      </div>
+      <h3>Ablenkrate</h3>
+      <p class="sub">Anteil der Anfragen, die der Bot ohne Mensch abschliesst</p>
+      <div class="formula">
+        <div class="lbl">Formel</div>
+        <div class="code">gelöste Bot-Sessions ÷ alle Bot-Sessions × 100</div>
+      </div>
+      <div class="kstats">
+        <div class="kstat"><div class="lbl">Typischer Zielwert</div><div class="val">40–60 %</div></div>
+        <div class="kstat"><div class="lbl">Messrhythmus</div><div class="val">wöchentlich</div></div>
+      </div>
+      <div class="warnbox">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C97F10" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Hohe Ablenkrate ohne CSAT-Kontrolle ist wertlos — ein Bot, der abwimmelt statt löst, treibt die Zahl auch nach oben.</span>
+      </div>
+      <div class="krel">
+        <span class="pill">CSAT</span>
+        <span class="pill">Eskalationsquote</span>
+        <span class="pill">Wiederkontaktrate</span>
+      </div>
+      <div class="kcard-foot">
+        <span>Beispielrechnung: 2'310 ÷ 4'200 = <b class="mono">55 %</b></span>
+        <span class="mono">bot-betrieb.ch</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="strip">
+  <div class="wrap">
+    <div class="item"><span class="num">7+</span><div><b>Jahre Bot-Betrieb</b><span>NLU bis LLM-Agent, in der Praxis verantwortet</span></div></div>
+    <div class="item"><span class="num">4</span><div><b>Sprachen im Testbetrieb</b><span>Methodik für mehrsprachige QA inklusive</span></div></div>
+    <div class="item"><span class="num">1</span><div><b>System statt Theorie</b><span>Jede Seite folgt demselben umsetzbaren Raster</span></div></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="warum">
+    <div class="sec-head">
+      <span class="eyebrow">Das Problem</span>
+      <h2>Der Bot ist schnell gebaut. Der Betrieb bringt dich um.</h2>
+      <p>Demos gibt es überall. Was fehlt, ist das Wissen dazwischen: Wie definierst du den Scope, bevor Sonderwünsche dich auffressen? Welche Kennzahlen beweisen den Wert gegenüber der Geschäftsleitung? Und wie testest du, dass der Bot auf Französisch nicht anders halluziniert als auf Deutsch? Genau diese Lücke schliesst das Framework.</p>
+    </div>
+    <div class="who">
+      <div class="who-card">
+        <h3><span class="dot" style="background:var(--petrol)"></span>Für dich gemacht, wenn du…</h3>
+        <p>…einen Support-Bot einführen oder verantworten sollst — als Team-Lead, Produktverantwortliche:r oder Digital-Allrounder im KMU — und einen erprobten Fahrplan statt Marketing-Folien brauchst.</p>
+      </div>
+      <div class="who-card">
+        <h3><span class="dot" style="background:var(--amber)"></span>Nichts für dich, wenn du…</h3>
+        <p>…einen fertigen Bot zum Anklicken suchst. Das hier ist kein Tool, sondern das Betriebswissen dazu — herstellerneutral, egal ob du mit Plattform X oder eigener API baust.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="module">
+    <div class="sec-head">
+      <span class="eyebrow">Inhalt</span>
+      <h2>Drei Module. Ein Raster. Kein Blabla.</h2>
+      <p>Jede Seite folgt derselben Struktur: Was, Formel bzw. Vorgehen, typischer Fehler, Zusammenhang. Zum Nachschlagen gebaut, nicht zum Durchlesen.</p>
+    </div>
+    <div class="mods">
+      <div class="mod">
+        <div class="mnum">Modul 1</div>
+        <h3>Der Bauplan</h3>
+        <p>Die Phasen von der Use-Case-Definition bis zum Go-live — mit Checklisten pro Phase und den Entscheidungen, die man nicht verschieben darf.</p>
+        <ul>
+          <li>Scope-Schnitt gegen Sonderwünsche</li>
+          <li>Prompt- und API-Design-Prinzipien</li>
+          <li>Go-live-Checkliste</li>
+        </ul>
+        <div class="mfoot">~30 Seiten</div>
+      </div>
+      <div class="mod">
+        <div class="mnum">Modul 2</div>
+        <h3>Das KPI-Framework</h3>
+        <p>Die 10 Kennzahlen, die zählen — mit Standardformel, Zielwert-Rahmen, typischer Fehlinterpretation und ausfüllbarem Berechnungs-Sheet.</p>
+        <ul>
+          <li>10 Kennzahl-Seiten im Einheitsraster</li>
+          <li>Sheet mit fertigen Formeln</li>
+          <li>Welche Metriken du dir sparen kannst</li>
+        </ul>
+        <div class="mfoot">10 Seiten + Sheet</div>
+      </div>
+      <div class="mod">
+        <div class="mnum">Modul 3</div>
+        <h3>Die Testset-Methodik</h3>
+        <p>Wie du mehrsprachige Testfälle aufbaust, kategorisierst und auswertest — damit Qualität messbar wird statt Bauchgefühl bleibt.</p>
+        <ul>
+          <li>Testfall-Kategorien und Aufbau</li>
+          <li>Mehrsprachigkeit ohne 4× Aufwand</li>
+          <li>Auswertungs-Raster für Halluzinationen</li>
+        </ul>
+        <div class="mfoot">~20 Seiten</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="beispiel">
+    <div class="sec-head">
+      <span class="eyebrow">Beispielseite</span>
+      <h2>So sieht eine Seite konkret aus.</h2>
+      <p>Die Kennzahl-Karte oben im Hero ist keine Illustration — sie ist die echte Seite «Ablenkrate» aus Modul 2, eins zu eins im Produkt-Raster. Eine vollständige Beispielseite als PDF gibt es gratis: Der Beratungsbot unten rechts schickt sie dir.</p>
+    </div>
+    <a class="btn" href="rechner.html">Kennzahl-Rechner öffnen</a>
+    <a class="btn ghost" href="#" onclick="openBot();return false;">Gratis-Beispielseite anfordern</a>
+  </section>
+
+  <section id="preis">
+    <div class="sec-head">
+      <span class="eyebrow">Preis</span>
+      <h2>Einmal zahlen. Dauerhaft nutzen.</h2>
+      <p>Kein Abo, keine Upsell-Treppe. Updates der gekauften Version inklusive.</p>
+    </div>
+    <div class="prices">
+      <div class="price">
+        <h3>Nur KPI-Framework</h3>
+        <p class="psub">Modul 2 einzeln</p>
+        <div class="amount">CHF 39<small> einmalig</small></div>
+        <ul>
+          <li>10 Kennzahl-Seiten</li>
+          <li>Berechnungs-Sheet</li>
+          <li class="no">Bauplan (Modul 1)</li>
+          <li class="no">Testset-Methodik (Modul 3)</li>
+        </ul>
+        <a class="btn ghost" href="#">Einzeln kaufen</a>
+      </div>
+      <div class="price featured">
+        <span class="badge">Komplett</span>
+        <h3>Das ganze Framework</h3>
+        <p class="psub">Alle drei Module</p>
+        <div class="amount">CHF 89<small> einmalig</small></div>
+        <ul>
+          <li>Bauplan mit Checklisten (Modul 1)</li>
+          <li>KPI-Framework + Sheet (Modul 2)</li>
+          <li>Testset-Methodik (Modul 3)</li>
+          <li>Updates der Version inklusive</li>
+        </ul>
+        <a class="btn" href="#">Komplett kaufen — CHF 89</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="sec-head">
+      <span class="eyebrow">Fragen</span>
+      <h2>Kurz beantwortet.</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>Für welche Bot-Plattform ist das gedacht?</summary>
+        <p>Für keine bestimmte — bewusst. Formeln, Phasen und Testmethodik sind herstellerneutral und funktionieren mit jeder Plattform, ob Baukasten oder eigene LLM-API-Integration.</p>
+      </details>
+      <details>
+        <summary>Sind die Zahlen und Beispiele echt?</summary>
+        <p>Nein. Alle Beispielzahlen und Beispielfirmen sind fiktiv. Die Methodik dahinter stammt aus jahrelanger Praxis, die Inhalte sind vollständig neu und generisch geschrieben.</p>
+      </details>
+      <details>
+        <summary>Brauche ich technisches Vorwissen?</summary>
+        <p>Nein. Das Framework ist genau für die Übersetzungsarbeit gebaut: technisch genug für die Umsetzung, verständlich genug für die Freigabe durch Nicht-Techniker.</p>
+      </details>
+      <details>
+        <summary>Was, wenn es mir nichts bringt?</summary>
+        <p>14 Tage Geld zurück, ohne Begründung. Eine kurze Mail genügt.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <div class="band">
+      <div>
+        <h2>Hör auf, es dir zusammenzugoogeln.</h2>
+        <p>Das Wissen aus Dutzenden Quellen, verdichtet in ein Raster, das du morgen anwenden kannst.</p>
+      </div>
+      <a class="btn" href="#preis">Framework holen</a>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Bot-Betrieb · Alle Beispielzahlen fiktiv</span>
+    <span>
+      <a href="#">Impressum</a>
+      <a href="#">Datenschutz</a>
+      <a href="#">Kontakt</a>
+    </span>
+  </div>
+</footer>
+
+<!-- Beratungsbot (Prototyp mit vordefinierten Antworten) -->
+<div class="bot-panel" id="botPanel" role="dialog" aria-label="Beratungsbot">
+  <div class="bot-head">
+    <b>Beratungsbot</b>
+    <span>Prototyp · antwortet zu diesem Angebot</span>
+  </div>
+  <div class="bot-msgs" id="botMsgs">
+    <div class="msg bot">Hallo! Ich beantworte Fragen zum Framework. Wähl eine Frage — oder stell dir vor, hier läuft später ein echter Agent. Genau das ist übrigens die Live-Demo dessen, was Modul 1 beschreibt.</div>
+  </div>
+  <div class="bot-quick" id="botQuick">
+    <button class="qbtn" onclick="ask(0)">Was genau bekomme ich?</button>
+    <button class="qbtn" onclick="ask(1)">Für wen ist das gedacht?</button>
+    <button class="qbtn" onclick="ask(2)">Gratis-Beispielseite, bitte!</button>
+  </div>
+  <div class="bot-foot">Prototyp — Antworten sind vordefiniert</div>
+</div>
+<button class="bot-fab" id="botFab" onclick="toggleBot()" aria-label="Beratungsbot öffnen">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+</button>
+
+<script>
+var qa = [
+  ["Was genau bekomme ich?", "Drei Module als PDF plus ein Berechnungs-Sheet: den Phasen-Bauplan mit Checklisten, 10 Kennzahl-Seiten mit Formeln und typischen Fehlinterpretationen, und die Methodik für mehrsprachige Testsets. Einmal zahlen, sofort herunterladen."],
+  ["Für wen ist das gedacht?", "Für alle, die einen Support-Bot einführen oder verantworten sollen — ohne dafür ein ganzes Team zu haben. Team-Leads, Produktverantwortliche, Digital-Allrounder im KMU. Herstellerneutral, kein Vorwissen nötig."],
+  ["Gratis-Beispielseite, bitte!", "Gern! Im fertigen Shop würdest du hier deine E-Mail eintragen und die Seite «Ablenkrate» als PDF erhalten. In diesem Prototyp ist das noch nicht angeschlossen — du siehst die Seite aber oben im Hero in voller Länge."]
+];
+function toggleBot(){
+  document.getElementById('botPanel').classList.toggle('open');
+}
+function openBot(){
+  document.getElementById('botPanel').classList.add('open');
+}
+function ask(i){
+  var msgs = document.getElementById('botMsgs');
+  var u = document.createElement('div');
+  u.className = 'msg user';
+  u.textContent = qa[i][0];
+  msgs.appendChild(u);
+  var b = document.createElement('div');
+  b.className = 'msg bot';
+  b.textContent = qa[i][1];
+  setTimeout(function(){ msgs.appendChild(b); msgs.scrollTop = msgs.scrollHeight; }, 350);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+</script>
+</body>
+</html>
