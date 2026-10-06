@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GerüstPlaner — Virtuelles Gerüst aufs Foto</title>
+<meta name="description" content="Gebäude fotografieren, Fassade markieren, virtuelles Gerüst direkt ins Bild legen — mit Materialliste für Rahmen-, Modul- und Rohr-Kupplungsgerüst.">
+<meta name="theme-color" content="#14231F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400..700;125,500..700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F7F4; --card:#FFFFFF; --ink:#14231F; --ink-soft:#4A5A54; --ink-faint:#7B8A84;
+  --petrol:#16655A; --petrol-deep:#0D453D; --petrol-tint:#E3EFEC;
+  --amber:#C97F10; --amber-tint:#FBF1DE; --red:#A32020; --red-tint:#FBE8E8;
+  --line:#DCE1DA; --stage:#0E1513; --orange:#F28C28;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{font-family:'Instrument Sans',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:15.5px;line-height:1.55;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+button,input,select{font-family:inherit;font-size:inherit}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* ---------- Kopf ---------- */
+header{position:sticky;top:0;z-index:50;background:rgba(246,247,244,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px;gap:12px;max-width:1200px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Archivo',sans-serif;font-weight:650;font-size:17px;letter-spacing:-.01em;text-decoration:none;color:var(--ink)}
+.logo-mark{width:28px;height:28px;border-radius:7px;background:var(--petrol);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo small{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:11px;color:var(--ink-faint);letter-spacing:.02em;line-height:1.1}
+.nav .ver{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--petrol);background:var(--petrol-tint);padding:4px 10px;border-radius:999px;white-space:nowrap}
+
+/* ---------- Layout ---------- */
+.app{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:960px){
+  .app{grid-template-columns:minmax(0,1.3fr) 440px;gap:20px;padding:20px 16px 60px;align-items:start}
+  .stage-col{position:sticky;top:76px}
+}
+
+/* ---------- Bühne (Foto + Overlay) ---------- */
+.stage{background:var(--stage);position:relative;overflow:hidden;border-radius:0}
+@media(min-width:960px){.stage{border-radius:var(--radius)}}
+.stage-inner{position:relative;min-height:240px;max-height:64vh;display:flex;align-items:center;justify-content:center}
+@media(min-width:960px){.stage-inner{max-height:calc(100vh - 120px);min-height:360px}}
+#canvas{display:block;max-width:100%;max-height:64vh;width:auto;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+@media(min-width:960px){#canvas{max-height:calc(100vh - 120px)}}
+#video{display:block;max-width:100%;max-height:64vh;width:auto;height:auto;background:#000}
+@media(min-width:960px){#video{max-height:calc(100vh - 120px)}}
+.stage-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#B7C4BF;text-align:center;padding:24px}
+.stage-empty b{font-family:'Archivo',sans-serif;font-size:18px;color:#fff;font-weight:600}
+.stage-empty p{font-size:13.5px;max-width:34ch}
+.stage-hint{background:#1C2A26;color:#fff;font-size:13px;padding:7px 14px;text-align:center;line-height:1.4;border-top:1px solid rgba(255,255,255,.08)}
+.stage-hint span.warn{color:#FFB4B4}
+.shutter{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:18px;padding:14px;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.shutter-btn{width:66px;height:66px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.45);background-clip:padding-box;cursor:pointer}
+.shutter-btn:active{transform:scale(.94)}
+.shutter .ghostb{background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);padding:9px 14px;border-radius:999px;cursor:pointer;font-size:13.5px}
+.stage-tools{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+.stage-tools button{background:rgba(14,21,19,.8);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:7px 9px;font-size:12px;cursor:pointer;backdrop-filter:blur(6px);display:flex;align-items:center;gap:5px}
+.stage-tools button svg{width:15px;height:15px}
+.stage-tools button:hover{background:rgba(22,101,90,.9)}
+
+/* ---------- Schritte ---------- */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:40}
+@media(min-width:960px){.steps{position:static;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}}
+.steps button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 4px 8px;cursor:pointer;color:var(--ink-faint);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:500;line-height:1.2}
+.steps button b{font-family:'IBM Plex Mono',monospace;font-size:11px;width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-weight:500}
+.steps button.active{color:var(--petrol);border-bottom-color:var(--petrol)}
+.steps button.done b{background:var(--petrol);border-color:var(--petrol);color:#fff}
+.steps button:disabled{opacity:.45;cursor:not-allowed}
+
+/* ---------- Panels ---------- */
+.panel{display:none;padding:18px 16px 40px}
+.panel.active{display:block}
+@media(min-width:960px){.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}}
+.panel h2{font-family:'Archivo',sans-serif;font-size:19px;font-weight:650;letter-spacing:-.01em;margin-bottom:4px}
+.panel .phint{font-size:13.5px;color:var(--ink-soft);margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--petrol);color:#fff;padding:12px 18px;border-radius:9px;text-decoration:none;font-weight:600;font-size:15px;border:none;cursor:pointer;transition:background .15s;width:100%}
+.btn:hover{background:var(--petrol-deep)}
+.btn.ghost{background:transparent;color:var(--petrol);border:1.5px solid var(--petrol)}
+.btn.ghost:hover{background:var(--petrol-tint)}
+.btn.small{padding:8px 14px;font-size:13.5px;width:auto}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn svg{flex-shrink:0}
+.btnrow{display:flex;flex-direction:column;gap:10px}
+.btnrow.h{flex-direction:row;flex-wrap:wrap}
+.btnrow.h .btn{width:auto;flex:1 1 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:14px}
+@media(min-width:960px){.card{background:var(--paper)}}
+.card h3{font-family:'Archivo',sans-serif;font-size:15.5px;font-weight:650;margin-bottom:8px}
+.group{margin-bottom:16px}
+.group>b{display:block;font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--petrol);padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0}
+.field label{font-size:14px;color:var(--ink-soft);line-height:1.35}
+.field label small{display:block;font-size:12px;color:var(--ink-faint)}
+.field input[type=number],.field select{width:124px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:14px;text-align:right;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)}
+.field select{text-align:left;width:164px;font-family:'Instrument Sans',sans-serif}
+.field input:focus,.field select:focus{outline:2px solid var(--petrol);outline-offset:-1px}
+.field input[type=range]{width:150px;accent-color:var(--petrol)}
+.field input[type=checkbox]{width:20px;height:20px;accent-color:var(--petrol)}
+.typegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.typegrid button{border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:10px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-soft);line-height:1.2;text-align:center}
+.typegrid button svg{width:40px;height:40px}
+.typegrid button.active{border-color:var(--petrol);background:var(--petrol-tint);color:var(--petrol-deep)}
+.note{display:flex;gap:9px;background:var(--amber-tint);border-radius:8px;padding:10px 12px;font-size:13px;color:#8A5606;line-height:1.5;margin-top:12px}
+.note svg{flex-shrink:0;margin-top:2px}
+.note.info{background:var(--petrol-tint);color:var(--petrol-deep)}
+.note.err{background:var(--red-tint);color:var(--red)}
+.pts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0 14px}
+.pt{border:1px solid var(--line);border-radius:8px;padding:8px 6px;text-align:center;font-size:12px;color:var(--ink-faint);background:var(--card)}
+.pt b{display:block;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink-faint)}
+.pt.set{border-color:var(--petrol);color:var(--petrol-deep);background:var(--petrol-tint)}
+.pt.set b{color:var(--petrol)}
+.pt.next{border-color:var(--orange);color:#8A5606;background:var(--amber-tint)}
+
+/* ---------- Kennzahlen & Material ---------- */
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+@media(min-width:960px){.kpi{background:var(--paper)}}
+.kpi small{display:block;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace}
+.kpi b{font-family:'Archivo',sans-serif;font-size:20px;font-weight:650;letter-spacing:-.01em;line-height:1.2}
+.kpi b em{font-style:normal;font-size:13px;color:var(--ink-faint);font-weight:500;margin-left:3px}
+table.mat{width:100%;border-collapse:collapse;font-size:14px}
+table.mat th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);padding:6px 0;border-bottom:1px solid var(--line);font-weight:500}
+table.mat th:not(:first-child),table.mat td:not(:first-child){text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap;padding-left:14px}
+table.mat td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+table.mat td small{display:block;color:var(--ink-faint);font-size:12px;line-height:1.35;font-family:'Instrument Sans',sans-serif}
+table.mat tr.grp td{padding:12px 0 4px;border:0;font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--petrol);font-weight:500}
+table.mat tr.sum td{font-weight:600;border-top:2px solid var(--ink);border-bottom:0}
+.assump{font-size:13px;color:var(--ink-soft);line-height:1.55}
+.assump li{margin-left:18px;margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;opacity:0;transition:all .2s;pointer-events:none;z-index:100;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{padding:20px 16px 36px;font-size:12.5px;color:var(--ink-faint);text-align:center;max-width:720px;margin:0 auto;line-height:1.5}
+footer a{color:var(--petrol)}
+input[type=file]{display:none}
+
+@media print{
+  header,.steps,.stage-tools,.stage-hint,.btnrow,.note.info,footer,.panel:not(#panel-4),.typegrid,.group,.shutter{display:none !important}
+  body{background:#fff}
+  .app{display:block}
+  .stage{border-radius:0;background:#fff}
+  .stage-inner{max-height:none}
+  #canvas{max-height:none;width:100%}
+  .panel{display:block !important;padding:12px 0;border:0}
+  .kpi{border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="logo" href="./">
+      <span class="logo-mark"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><path d="M2 2v12M8 2v12M14 2v12M2 5h12M2 9h12M2 13h12M2 5l6 4M8 5l6 4"/></svg></span>
+      <span>GerüstPlaner<small>Virtuelles Gerüst aufs Foto</small></span>
+    </a>
+    <span class="ver">v0.1 · Erste Version</span>
+  </div>
+</header>
+
+<main class="app">
+  <div class="stage-col">
+    <section class="stage">
+      <div class="stage-inner" id="stage">
+        <video id="video" playsinline autoplay muted hidden></video>
+        <canvas id="canvas" hidden></canvas>
+        <div class="stage-empty" id="stageEmpty">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#5F7B74" stroke-width="2"><rect x="6" y="14" width="36" height="26" rx="4"/><path d="M18 14l3-5h6l3 5"/><circle cx="24" cy="27" r="7"/></svg>
+          <b>Noch kein Foto</b>
+          <p>Fotografiere die Fassade möglichst frontal und mit Boden-Kante im Bild — oder starte mit dem Demo-Gebäude.</p>
+        </div>
+        <div class="shutter" id="shutterBar" hidden>
+          <button class="ghostb" id="btnCancelCam">Abbrechen</button>
+          <button class="shutter-btn" id="btnShutter" aria-label="Foto aufnehmen"></button>
+          <button class="ghostb" id="btnFlip">Kamera wechseln</button>
+        </div>
+        <div class="stage-tools" id="stageTools" hidden>
+          <button id="btnToggleOverlay" title="Gerüst ein-/ausblenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Gerüst</span></button>
+          <button id="btnNewPhoto" title="Neues Foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 012-2h2l2-3h6l2 3h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle cx="12" cy="13" r="4"/></svg><span>Neu</span></button>
+        </div>
+      </div>
+      <div class="stage-hint" id="stageHint" hidden><span id="stageHintText"></span></div>
+    </section>
+  </div>
+
+  <div class="panel-col">
+    <nav class="steps" id="steps">
+      <button data-step="1" class="active"><b>1</b>Foto</button>
+      <button data-step="2" disabled><b>2</b>Fassade</button>
+      <button data-step="3" disabled><b>3</b>Gerüst</button>
+      <button data-step="4" disabled><b>4</b>Material</button>
+    </nav>
+
+    <!-- Schritt 1: Foto -->
+    <section class="panel active" id="panel-1">
+      <h2>Gebäude fotografieren</h2>
+      <p class="phint">Am besten frontal, mit der ganzen Fassade und der Bodenkante im Bild. Das Gerüst wird danach perspektivisch auf die Fassade gelegt.</p>
+      <div class="btnrow">
+        <button class="btn" id="btnCam">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 012-2h2l2-3h6l2 3h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Kamera öffnen
+        </button>
+        <label class="btn ghost" for="fileInput">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg>
+          Foto aus Galerie wählen
+        </label>
+        <input type="file" id="fileInput" accept="image/*">
+        <button class="btn ghost" id="btnDemo">Mit Demo-Gebäude starten</button>
+      </div>
+      <div class="note info" id="camNote" hidden></div>
+      <div class="card">
+        <h3>So funktioniert's</h3>
+        <ol class="assump">
+          <li><b>Foto</b> der Fassade aufnehmen oder auswählen.</li>
+          <li><b>Fassade markieren:</b> vier Ecken antippen (oben links → oben rechts → unten rechts → unten links). Die Punkte lassen sich nachträglich verschieben.</li>
+          <li><b>Masse & Gerüstart</b> eingeben — das Gerüst wird live und perspektivisch ins Bild gelegt.</li>
+          <li><b>Materialliste</b> prüfen, als Bild speichern, kopieren oder drucken.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Schritt 2: Fassade -->
+    <section class="panel" id="panel-2">
+      <h2>Fassade markieren</h2>
+      <p class="phint">Tippe die vier Ecken der Fassadenfläche an, auf der das Gerüst stehen soll. Die untere Kante ist die Aufstandslinie am Boden.</p>
+      <div class="pts" id="ptsGrid">
+        <div class="pt" data-i="0"><b>1</b>oben links</div>
+        <div class="pt" data-i="1"><b>2</b>oben rechts</div>
+        <div class="pt" data-i="2"><b>3</b>unten rechts</div>
+        <div class="pt" data-i="3"><b>4</b>unten links</div>
+      </div>
+      <div class="btnrow h">
+        <button class="btn ghost small" id="btnUndoPt">Letzten Punkt löschen</button>
+        <button class="btn ghost small" id="btnResetPts">Alle Punkte löschen</button>
+      </div>
+      <div class="btnrow" style="margin-top:14px">
+        <button class="btn" id="btnToStep3" disabled>Weiter zu Masse & Gerüst</button>
+      </div>
+      <div class="note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span>Tipp: Punkte ziehen, um sie zu korrigieren. Je genauer die Ecken, desto besser sitzt das Gerüst — besonders bei schrägen Aufnahmen.</span>
+      </div>
+    </section>
+
+    <!-- Schritt 3: Gerüst -->
+    <section class="panel" id="panel-3">
+      <h2>Masse & Gerüstart</h2>
+      <p class="phint">Reale Masse der markierten Fassadenfläche eingeben. Daraus werden Felder, Lagen und Material gerechnet.</p>
+
+      <div class="group">
+        <b>Fassade</b>
+        <div class="field"><label for="inW">Breite der markierten Fläche<small>Meter, Aussenkante zu Aussenkante</small></label><input type="number" id="inW" min="1" max="200" step="0.1" value="12"></div>
+        <div class="field"><label for="inH">Höhe bis Oberkante Arbeitsbereich<small>Meter, ab Boden</small></label><input type="number" id="inH" min="1" max="60" step="0.1" value="8"></div>
+      </div>
+
+      <div class="group">
+        <b>Gerüstart</b>
+        <div class="typegrid" id="typeGrid">
+          <button data-type="rahmen">
+            <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v32M20 4v32M34 4v32M6 14h28M6 24h28M6 34h28M6 14l14 10M20 14l14 10"/></svg>
+            Rahmen­gerüst
+          </button>
+          <button data-type="modul">
+            <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4v32M32 4v32M8 12h24M8 22h24M8 32h24"/><circle cx="8" cy="12" r="2.6" fill="currentColor"/><circle cx="32" cy="12" r="2.6" fill="currentColor"/><circle cx="8" cy="22" r="2.6" fill="currentColor"/><circle cx="32" cy="22" r="2.6" fill="currentColor"/><circle cx="8" cy="32" r="2.6" fill="currentColor"/><circle cx="32" cy="32" r="2.6" fill="currentColor"/><path d="M8 12l24 10"/></svg>
+            Modul­gerüst
+          </button>
+          <button data-type="rohr">
+            <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4v32M31 4v32M4 13h32M4 27h32M9 13l22 14"/><rect x="6" y="10" width="6" height="6" fill="currentColor" stroke="none"/><rect x="28" y="10" width="6" height="6" fill="currentColor" stroke="none"/><rect x="6" y="24" width="6" height="6" fill="currentColor" stroke="none"/><rect x="28" y="24" width="6" height="6" fill="currentColor" stroke="none"/></svg>
+            Rohr-Kupplung
+          </button>
+        </div>
+        <p class="assump" id="typeDesc" style="margin-bottom:10px"></p>
+        <div class="field"><label for="inField">Feldlänge<small>Systemmass längs der Fassade</small></label>
+          <select id="inField">
+            <option value="1.57">1,57 m</option>
+            <option value="2.07">2,07 m</option>
+            <option value="2.57" selected>2,57 m</option>
+            <option value="3.07">3,07 m</option>
+          </select></div>
+        <div class="field"><label for="inWidth">Breitenklasse<small>Gerüstbreite / Belagbreite</small></label>
+          <select id="inWidth">
+            <option value="0.73" selected>W06 — 0,73 m</option>
+            <option value="1.09">W09 — 1,09 m</option>
+          </select></div>
+        <div class="field"><label for="inDeckAll">Alle Lagen belegen<small>Sonst nur oberste Arbeitslage</small></label><input type="checkbox" id="inDeckAll" checked></div>
+      </div>
+
+      <div class="group">
+        <b>Darstellung</b>
+        <div class="field"><label for="inDepth">Gerüsttiefe im Bild<small>Nur optisch, Perspektive der Aussenebene</small></label><input type="range" id="inDepth" min="0" max="0.18" step="0.005" value="0.05"></div>
+        <div class="field"><label for="inOpacity">Deckkraft</label><input type="range" id="inOpacity" min="0.3" max="1" step="0.05" value="0.9"></div>
+        <div class="field"><label for="inLabels">Beschriftung einblenden</label><input type="checkbox" id="inLabels" checked></div>
+        <div class="field"><label for="inAnchors">Anker anzeigen</label><input type="checkbox" id="inAnchors" checked></div>
+      </div>
+
+      <div class="kpis" id="kpis3"></div>
+      <div id="heightWarn"></div>
+      <div class="btnrow" style="margin-top:14px">
+        <button class="btn" id="btnToStep4">Materialliste anzeigen</button>
+      </div>
+    </section>
+
+    <!-- Schritt 4: Material -->
+    <section class="panel" id="panel-4">
+      <h2>Materialliste</h2>
+      <p class="phint" id="matTitle"></p>
+      <div class="kpis" id="kpis4"></div>
+      <table class="mat" id="matTable"></table>
+      <div class="btnrow h" style="margin-top:16px">
+        <button class="btn small" id="btnPng">Bild speichern</button>
+        <button class="btn ghost small" id="btnCopy">Liste kopieren</button>
+        <button class="btn ghost small" id="btnPrint">Drucken / PDF</button>
+      </div>
+      <div class="card">
+        <h3>Annahmen dieser Berechnung</h3>
+        <ul class="assump" id="assumpList"></ul>
+      </div>
+      <div class="note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17h.01"/></svg>
+        <span><b>Richtwerte, keine Statik.</b> Die Mengen sind eine Vorkalkulation auf Basis der Regelausführung (EN 12811 / DIN 4420, Lastklasse 3). Ausführung, Verankerung und Standsicherheit sind durch eine fachkundige Person nach Aufbau- und Verwendungsanleitung des Herstellers festzulegen.</span>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  GerüstPlaner v0.1 — läuft vollständig im Browser. Fotos und Eingaben bleiben auf dem Gerät (localStorage), es werden keine Daten übertragen.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   Zustand
+   ===================================================================== */
+var KEY = 'geruestplaner-v1';
+var S = {
+  photo: null, pw: 0, ph: 0,     // Foto (Canvas/Image) + Pixelmasse
+  points: [],                    // 4 Fassadenecken in Foto-Pixeln
+  W: 12, H: 8,                   // reale Masse in m
+  type: 'rahmen', field: 2.57, width: 0.73, deckAll: true,
+  depth: 0.05, opacity: 0.9, labels: true, anchors: true,
+  step: 1, overlay: true
+};
+var LIFT = 2.0;          // Lagenhöhe
+var RAIL1 = 0.5, RAIL2 = 1.0, TOE = 0.15;
+
+var $ = function(id){ return document.getElementById(id); };
+var canvas = $('canvas'), ctx = canvas.getContext('2d');
+var video = $('video');
+var stream = null, facing = 'environment';
+var dragIdx = -1, hideHandles = false;
+
+/* =====================================================================
+   Gerüstarten
+   ===================================================================== */
+var TYPES = {
+  rahmen: {
+    name: 'Rahmengerüst',
+    desc: 'Systemrahmengerüst mit 2,00 m Vertikalrahmen (z.B. Layher Blitz, Plettac SL, Rux Super). Schnellster Aufbau für gerade Fassaden.',
+    fields: [1.57, 2.07, 2.57, 3.07]
+  },
+  modul: {
+    name: 'Modulgerüst',
+    desc: 'Rosetten-Modulgerüst (z.B. Layher Allround, Ringscaff). Flexibel bei Vor- und Rücksprüngen, Riegel in 45°/90°-Raster.',
+    fields: [1.57, 2.07, 2.57, 3.07]
+  },
+  rohr: {
+    name: 'Rohr-Kupplungsgerüst',
+    desc: 'Stahlrohr 48,3 mm mit Kupplungen. Frei anpassbar, aber material- und zeitintensiv — für Sonderformen und Anschlüsse.',
+    fields: [1.5, 2.0, 2.5, 3.0]
+  }
+};
+
+/* =====================================================================
+   Modell: Felder, Lagen, Anker
+   ===================================================================== */
+function model(){
+  var f = S.field;
+  var n = Math.max(1, Math.ceil(S.W / f - 1e-9));         // Felder
+  var L = n * f;                                           // Gerüstlänge
+  var m = Math.max(1, Math.ceil(S.H / LIFT - 1e-9));       // Lagen
+  var Hs = m * LIFT;                                       // Höhe oberste Belaglage
+  var dl = S.deckAll ? m : 1;                              // belegte Lagen
+  var decked = [];
+  for (var j = 1; j <= m; j++) if (S.deckAll || j === m) decked.push(j);
+  var x0 = -(L - S.W) / 2;                                 // Überstand gleichmässig verteilt
+  var k = S.width >= 1.0 ? 3 : 2;                          // Beläge à 0,32 m je Feld
+  var diagPerLift = Math.ceil(n / 5);                      // Diagonale in jedem 5. Feld
+  var rows = [];                                           // Ankerreihen (Höhe)
+  for (var h = 4; h <= Hs + 1e-9; h += 4) rows.push(h);
+  if (!rows.length || Math.abs(rows[rows.length-1] - Hs) > 1e-9) rows.push(Hs);
+  var anchors = [];
+  rows.forEach(function(h, r){
+    for (var i = 0; i <= n; i++) if ((i + r) % 2 === 0) anchors.push({i:i, h:h});
+  });
+  var ladderBay = Math.floor(n / 2);
+  return {f:f, n:n, L:L, m:m, Hs:Hs, dl:dl, decked:decked, x0:x0, k:k,
+          diagPerLift:diagPerLift, anchors:anchors, ladderBay:ladderBay,
+          area: L * Hs, deckArea: L * S.width * dl};
+}
+
+/* =====================================================================
+   Material je Gerüstart  (Richtwerte, kg = Richtgewicht je Stück)
+   ===================================================================== */
+function fmtM(v){ return v.toFixed(2).replace('.', ',') + ' m'; }
+function wName(){ return S.width >= 1.0 ? 'W09 (1,09 m)' : 'W06 (0,73 m)'; }
+
+function materials(M){
+  var f = M.f, n = M.n, m = M.m, dl = M.dl, k = M.k, w = S.width, Hs = M.Hs;
+  var nA = M.anchors.length, nDiag = M.diagPerLift * m;
+  var wide = w >= 1.0;
+  var rows = [], assump = [];
+  function g(t){ rows.push({grp:t}); }
+  function r(name, qty, kg, note){ rows.push({name:name, qty:qty, kg:kg, note:note}); }
+
+  var decks = dl * n * k - 2 * dl;                      // Durchstieg ersetzt 2 Beläge
+  var deckKg = 6.6 * f, hatchKg = 9.5 * f;
+  var diagLen = Math.sqrt(f*f + LIFT*LIFT);
+
+  if (S.type === 'rahmen'){
+    g('Tragwerk');
+    r('Vertikalrahmen 2,00 × ' + fmtM(w), (n+1)*m, wide ? 23 : 18, 'Stahl, je Lage und Stielachse');
+    r('Geländerrahmen / Geländerpfosten oben', n+1, wide ? 8 : 6, 'Seitenschutz oberste Lage');
+    r('Fussspindel 0,60 m', (n+1)*2, 4, 'je Stiel, mit Fussplatte');
+    r('Vertikaldiagonale ' + fmtM(f), nDiag, Math.round(2.1*diagLen*10)/10, 'jedes 5. Feld, je Lage');
+    g('Belag');
+    r('Stahlboden 0,32 × ' + fmtM(f), decks, Math.round(deckKg*10)/10, k + ' je Feld, ' + dl + ' Lage(n)');
+    r('Durchstiegsbelag 0,61 m mit Leiter', dl, Math.round(hatchKg*10)/10, 'Leitergang, je belegte Lage');
+    g('Seitenschutz');
+    r('Geländerholm ' + fmtM(f), 2*n*dl, Math.round(1.6*f*10)/10, 'Rücken- und Knieholm aussen');
+    r('Stirngeländer ' + fmtM(w), 2*dl, wide ? 7 : 5, 'Gerüstenden, je belegte Lage');
+    r('Bordbrett ' + fmtM(f), n*dl, Math.round(2.0*f*10)/10, 'längs, aussen');
+    r('Stirnbordbrett ' + fmtM(w), 2*dl, wide ? 2.3 : 1.5, 'Gerüstenden');
+    g('Verankerung');
+    r('Gerüsthalter (Ankerrohr) mit Normalkupplung', nA, 3, 'Raster ca. 4 × 4 m versetzt');
+    r('Ringschraube + Dübel', nA, 0.2, 'bauseits in tragfähigem Untergrund');
+    assump = [
+      'Systemrahmengerüst mit Vertikalrahmen 2,00 m, Breitenklasse ' + wName() + ', Lastklasse 3 (2,0 kN/m²).',
+      'Feldlänge ' + fmtM(f) + ', ' + n + ' Felder = ' + fmtM(M.L) + ' (Überstand symmetrisch verteilt), ' + m + ' Lagen = ' + fmtM(Hs) + ' Belaghöhe plus 1,00 m Seitenschutz.',
+      S.deckAll ? 'Alle Lagen belegt, je Lage ein Leitergang mit Durchstiegsbelag.' : 'Nur die oberste Lage belegt (Arbeitslage), ein Leitergang mit Durchstiegsbelag.',
+      'Vertikaldiagonalen in jedem 5. Feld je Lage; horizontale Aussteifung über die Beläge.',
+      'Verankerung im Raster 4 × 4 m versetzt (ca. 8 m² je Anker), geschlossene Fassade ohne Netz oder Plane. Mit Netz/Plane verdoppelt sich die Ankerzahl etwa.',
+      'Ohne Eckausbildung, Konsolen, Schutzdach, Treppenturm, Innengeländer (bei Wandabstand > 0,30 m erforderlich).'
+    ];
+  }
+  else if (S.type === 'modul'){
+    var riegelL = 2*n*(m+1) + 2*n*dl;
+    g('Tragwerk');
+    r('Vertikalstiel 2,00 m mit Rosetten', 2*(n+1)*m, 9.5, 'innen und aussen, je Lage');
+    r('Vertikalstiel 1,00 m (Seitenschutz oben)', (n+1) + 2, 5, 'aussen und an den Stirnseiten');
+    r('Anfangsstück', 2*(n+1), 1.3, 'je Stielachse');
+    r('Fussspindel 0,60 m', 2*(n+1), 4, 'je Stielachse');
+    r('O-Riegel längs ' + fmtM(f), riegelL, Math.round(2.2*f*10)/10, 'Grund-, Lagen- und Geländerriegel');
+    r('U-Riegel quer ' + fmtM(w), (n+1)*(m+1), wide ? 4.6 : 3.4, 'Belagauflage, je Stielachse und Ebene');
+    r('O-Riegel quer ' + fmtM(w) + ' (Stirngeländer)', 4*dl, wide ? 2.7 : 1.9, 'Gerüstenden, 2 je Seite');
+    r('Vertikaldiagonale ' + fmtM(f), nDiag, Math.round(2.4*diagLen*10)/10, 'jedes 5. Feld, je Lage, aussen');
+    g('Belag');
+    r('Stahlboden 0,32 × ' + fmtM(f), decks, Math.round(deckKg*10)/10, k + ' je Feld, ' + dl + ' Lage(n)');
+    r('Durchstiegsbelag 0,61 m mit Leiter', dl, Math.round(hatchKg*10)/10, 'Leitergang, je belegte Lage');
+    g('Seitenschutz');
+    r('Bordbrett ' + fmtM(f), n*dl, Math.round(2.0*f*10)/10, 'längs, aussen');
+    r('Stirnbordbrett ' + fmtM(w), 2*dl, wide ? 2.3 : 1.5, 'Gerüstenden');
+    g('Verankerung');
+    r('Gerüsthalter (Ankerrohr) mit Normalkupplung', nA, 3, 'Raster ca. 4 × 4 m versetzt');
+    r('Ringschraube + Dübel', nA, 0.2, 'bauseits');
+    assump = [
+      'Modulgerüst mit Rosettenstielen 2,00 m, Breitenklasse ' + wName() + ', Lastklasse 3 (2,0 kN/m²).',
+      'Feldlänge ' + fmtM(f) + ', ' + n + ' Felder = ' + fmtM(M.L) + ', ' + m + ' Lagen = ' + fmtM(Hs) + ' Belaghöhe plus 1,00 m Seitenschutz.',
+      'Grundriegel auf Fussspindelhöhe, Längsriegel innen und aussen je Ebene, Beläge auf U-Riegeln.',
+      S.deckAll ? 'Alle Lagen belegt, je Lage ein Leitergang mit Durchstiegsbelag.' : 'Nur die oberste Lage belegt (Arbeitslage), ein Leitergang mit Durchstiegsbelag.',
+      'Vertikaldiagonalen in jedem 5. Feld je Lage auf der Aussenseite.',
+      'Verankerung im Raster 4 × 4 m versetzt, geschlossene Fassade ohne Netz oder Plane.',
+      'Ohne Eckausbildung, Konsolen, Treppenturm, Innengeländer.'
+    ];
+  }
+  else {
+    var colsOut = n+1, colsIn = n+1;
+    var tOut = Math.ceil((Hs+1)/6), tIn = Math.ceil(Hs/6);
+    var tubesStiel = colsOut*tOut + colsIn*tIn;
+    var stossStiel = colsOut*(tOut-1) + colsIn*(tIn-1);
+    var rowsL = (m+1)*2 + 2*dl;                      // Längsriegel-Reihen
+    var tL = Math.ceil(M.L/6);
+    var tubesL = rowsL*tL, stossL = rowsL*(tL-1);
+    var quer = (n+1)*(m+1) + 4*dl;
+    var querLen = wide ? 2.0 : 1.5;
+    var kNormal = rowsL*(n+1) + quer*2 + nA;
+    var kDreh = nDiag*2;
+    g('Rohre (Stahl 48,3 × 3,2 mm)');
+    r('Rohr 6,00 m — Stiele', tubesStiel, 21.4, (colsIn+colsOut) + ' Stielachsen, Reststücke nicht ausgeglichen');
+    r('Rohr 6,00 m — Längsriegel', tubesL, 21.4, rowsL + ' Riegelreihen à ' + fmtM(M.L));
+    r('Rohr ' + fmtM(querLen) + ' — Querriegel', quer, Math.round(3.56*querLen*10)/10, 'je Stielachse und Ebene, inkl. Stirngeländer');
+    r('Rohr ' + (diagLen <= 4 ? '4,00 m' : '6,00 m') + ' — Diagonalen', nDiag, diagLen <= 4 ? 14.2 : 21.4, 'jedes 5. Feld, je Lage');
+    g('Kupplungen');
+    r('Normalkupplung', kNormal, 1.2, 'Riegel–Stiel, Anker');
+    r('Drehkupplung', kDreh, 1.4, 'Diagonalen, 2 je Stück');
+    r('Stossverbinder', stossStiel + stossL, 1.0, 'Rohrstösse Stiele und Längsriegel');
+    g('Fusspunkt');
+    r('Fussplatte', 2*(n+1), 1.3, 'je Stielachse');
+    r('Fussspindel 0,60 m', 2*(n+1), 4, 'je Stielachse');
+    g('Belag');
+    r('Stahlboden / Bohle 0,32 × ' + fmtM(f), decks, Math.round(deckKg*10)/10, k + ' je Feld, ' + dl + ' Lage(n)');
+    r('Durchstiegsbelag 0,61 m mit Leiter', dl, Math.round(hatchKg*10)/10, 'Leitergang, je belegte Lage');
+    g('Seitenschutz');
+    r('Bordbrett ' + fmtM(f), n*dl, Math.round(2.0*f*10)/10, 'längs, aussen');
+    r('Stirnbordbrett ' + fmtM(w), 2*dl, wide ? 2.3 : 1.5, 'Gerüstenden');
+    g('Verankerung');
+    r('Gerüsthalter (Ankerrohr)', nA, 2, 'Raster ca. 4 × 4 m versetzt, Kupplung oben gezählt');
+    r('Ringschraube + Dübel', nA, 0.2, 'bauseits');
+    assump = [
+      'Rohr-Kupplungsgerüst nach EN 12811-1, Stahlrohr 48,3 × 3,2 mm, Breitenklasse ' + wName() + ', Lastklasse 3.',
+      'Feldlänge ' + fmtM(f) + ', ' + n + ' Felder = ' + fmtM(M.L) + ', ' + m + ' Lagen = ' + fmtM(Hs) + ' Belaghöhe plus 1,00 m Seitenschutz.',
+      'Stiele und Längsriegel aus 6,00-m-Rohren, Rohrstösse mit Stossverbindern; Passrohre und Verschnitt nicht berücksichtigt.',
+      'Querriegel ' + fmtM(querLen) + ' je Stielachse und Ebene, Verbindungen mit Normalkupplungen, Diagonalen mit Drehkupplungen.',
+      S.deckAll ? 'Alle Lagen belegt, je Lage ein Leitergang mit Durchstiegsbelag.' : 'Nur die oberste Lage belegt, ein Leitergang mit Durchstiegsbelag.',
+      'Verankerung im Raster 4 × 4 m versetzt, geschlossene Fassade ohne Netz oder Plane.',
+      'Ohne Horizontaldiagonalen, Querdiagonalen, Eckausbildung und Konsolen.'
+    ];
+  }
+  var totalKg = 0, totalPcs = 0;
+  rows.forEach(function(x){ if (!x.grp){ totalKg += x.qty * x.kg; totalPcs += x.qty; } });
+  return {rows:rows, assump:assump, totalKg:totalKg, totalPcs:totalPcs};
+}
+
+/* =====================================================================
+   Perspektive: Einheitsquadrat → Viereck (Heckbert)
+   ===================================================================== */
+function squareToQuad(p){
+  var x0=p[0].x,y0=p[0].y,x1=p[1].x,y1=p[1].y,x2=p[2].x,y2=p[2].y,x3=p[3].x,y3=p[3].y;
+  var dx1=x1-x2, dx2=x3-x2, dx3=x0-x1+x2-x3;
+  var dy1=y1-y2, dy2=y3-y2, dy3=y0-y1+y2-y3;
+  var a,b,c,d,e,f,g,h;
+  if (Math.abs(dx3)<1e-9 && Math.abs(dy3)<1e-9){
+    a=x1-x0; b=x2-x1; c=x0; d=y1-y0; e=y2-y1; f=y0; g=0; h=0;
+  } else {
+    var det = dx1*dy2 - dx2*dy1;
+    if (Math.abs(det) < 1e-12) det = 1e-12;
+    g=(dx3*dy2-dx2*dy3)/det; h=(dx1*dy3-dx3*dy1)/det;
+    a=x1-x0+g*x1; b=x3-x0+h*x3; c=x0; d=y1-y0+g*y1; e=y3-y0+h*y3; f=y0;
+  }
+  return function(u,v){
+    var den = g*u + h*v + 1;
+    if (Math.abs(den) < 1e-6) den = 1e-6;
+    return {x:(a*u+b*v+c)/den, y:(d*u+e*v+f)/den};
+  };
+}
+
+/* =====================================================================
+   Zeichnen
+   ===================================================================== */
+function lw(px){ return Math.max(1, canvas.width / 700) * px; }
+
+function draw(){
+  if (!S.photo) return;
+  var cw = canvas.width, ch = canvas.height;
+  ctx.clearRect(0,0,cw,ch);
+  ctx.drawImage(S.photo, 0, 0, cw, ch);
+  var pts = S.points;
+
+  if (pts.length === 4 && S.overlay) drawScaffold();
+
+  // Fassadenviereck + Handles
+  if (!hideHandles && pts.length){
+    ctx.save();
+    ctx.setLineDash([lw(6), lw(5)]);
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = lw(1.5);
+    ctx.beginPath();
+    pts.forEach(function(p,i){ i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y); });
+    if (pts.length === 4) ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (S.step <= 3){
+      pts.forEach(function(p,i){
+        ctx.beginPath(); ctx.arc(p.x,p.y,lw(11),0,Math.PI*2);
+        ctx.fillStyle = (i===dragIdx) ? '#F28C28' : 'rgba(22,101,90,.95)'; ctx.fill();
+        ctx.lineWidth = lw(2.5); ctx.strokeStyle = '#fff'; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = '600 ' + lw(12) + 'px Instrument Sans, system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(i+1), p.x, p.y + lw(0.5));
+      });
+    }
+    ctx.restore();
+  }
+}
+
+function drawScaffold(){
+  var M = model();
+  var map = squareToQuad(S.points);
+  var cw = canvas.width, ch = canvas.height, cx = cw/2, cy = ch/2;
+  var s = 1 + S.depth;
+  var W = S.W, Hf = S.H;
+  // Fassadenkoordinaten (m) → Bild
+  function P(xm, ym){ return map(xm / W, 1 - ym / Hf); }
+  function Q(xm, ym){ var p = P(xm,ym); return {x: cx + (p.x-cx)*s, y: cy + (p.y-cy)*s}; }
+  function line(a,b){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+  function quad(a,b,c,d){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); }
+
+  var n=M.n, m=M.m, f=M.f, x0=M.x0, Hs=M.Hs, xe = x0 + M.L;
+  var isTube = S.type === 'rohr', isMod = S.type === 'modul';
+  var colMain = isTube ? '#C9CED3' : (isMod ? '#D9DEE3' : '#F28C28');
+  var colInner = isTube ? 'rgba(170,178,186,.8)' : (isMod ? 'rgba(190,198,206,.8)' : 'rgba(242,140,40,.65)');
+  var deckFill = 'rgba(176,184,192,.55)';
+  var deckEdge = 'rgba(90,98,106,.9)';
+
+  ctx.save();
+  ctx.globalAlpha = S.opacity;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  // Schatten auf Fassade (leicht)
+  ctx.fillStyle = 'rgba(0,0,0,.12)';
+  quad(P(x0,0), P(xe,0), P(xe,Hs+1), P(x0,Hs+1));
+
+  // Innenebene: Stiele und Riegel
+  ctx.strokeStyle = colInner; ctx.lineWidth = lw(2.2);
+  for (var i=0;i<=n;i++) line(P(x0+i*f,0), P(x0+i*f,Hs));
+  ctx.lineWidth = lw(1.6);
+  for (var j=0;j<=m;j++) line(P(x0,j*LIFT), P(xe,j*LIFT));
+
+  // Beläge
+  M.decked.forEach(function(j){
+    var y = j*LIFT;
+    for (var i=0;i<n;i++){
+      var xa = x0+i*f, xb = xa+f;
+      ctx.fillStyle = deckFill;
+      quad(P(xa,y), P(xb,y), Q(xb,y), Q(xa,y));
+      ctx.strokeStyle = deckEdge; ctx.lineWidth = lw(1);
+      ctx.beginPath(); var a=P(xa,y),b=P(xb,y),c=Q(xb,y),d=Q(xa,y);
+      ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.stroke();
+      // Belagfugen
+      var kk = M.k; ctx.strokeStyle = 'rgba(60,66,72,.45)';
+      for (var q=1;q<kk;q++){
+        var t = q/kk;
+        var p1 = P(xa,y), p2 = Q(xa,y), p3 = P(xb,y), p4 = Q(xb,y);
+        line({x:p1.x+(p2.x-p1.x)*t, y:p1.y+(p2.y-p1.y)*t}, {x:p3.x+(p4.x-p3.x)*t, y:p3.y+(p4.y-p3.y)*t});
+      }
+    }
+    // Leitergang: Durchstieg-Markierung
+    var lb = M.ladderBay, xa2 = x0+lb*f+f*0.18, xb2 = x0+lb*f+f*0.82;
+    ctx.fillStyle = 'rgba(245,200,70,.55)';
+    quad(P(xa2,y), P(xb2,y), Q(xb2,y), Q(xa2,y));
+  });
+
+  // Querriegel (innen ↔ aussen)
+  ctx.strokeStyle = colMain; ctx.lineWidth = lw(1.8);
+  for (var j2=0;j2<=m;j2++) for (var i2=0;i2<=n;i2++) line(P(x0+i2*f,j2*LIFT), Q(x0+i2*f,j2*LIFT));
+
+  // Leitern (Innenebene, Leitergang)
+  ctx.strokeStyle = 'rgba(245,200,70,.95)'; ctx.lineWidth = lw(1.6);
+  var xc = x0 + M.ladderBay*f + f/2;
+  M.decked.forEach(function(j){
+    var yb = (j-1)*LIFT, yt = j*LIFT + 0.6;
+    var mix = function(xm, ym){ var p=P(xm,ym), q=Q(xm,ym); return {x:(p.x+q.x)/2, y:(p.y+q.y)/2}; };
+    line(mix(xc-0.2,yb), mix(xc-0.2,yt)); line(mix(xc+0.2,yb), mix(xc+0.2,yt));
+    for (var r=yb+0.3; r<yt; r+=0.3) line(mix(xc-0.2,r), mix(xc+0.2,r));
+  });
+
+  // Aussenebene: Stiele, Riegel, Geländer
+  ctx.strokeStyle = colMain; ctx.lineWidth = lw(3);
+  for (var i3=0;i3<=n;i3++) line(Q(x0+i3*f,0), Q(x0+i3*f,Hs+RAIL2));
+  ctx.lineWidth = lw(2);
+  for (var j3=0;j3<=m;j3++) line(Q(x0,j3*LIFT), Q(xe,j3*LIFT));
+  ctx.lineWidth = lw(1.6);
+  M.decked.forEach(function(j){
+    var y = j*LIFT;
+    line(Q(x0,y+RAIL1), Q(xe,y+RAIL1));
+    line(Q(x0,y+RAIL2), Q(xe,y+RAIL2));
+    // Stirngeländer
+    line(P(x0,y+RAIL1), Q(x0,y+RAIL1)); line(P(x0,y+RAIL2), Q(x0,y+RAIL2));
+    line(P(xe,y+RAIL1), Q(xe,y+RAIL1)); line(P(xe,y+RAIL2), Q(xe,y+RAIL2));
+    // Bordbrett
+    ctx.fillStyle = 'rgba(235,190,90,.8)';
+    quad(Q(x0,y), Q(xe,y), Q(xe,y+TOE), Q(x0,y+TOE));
+  });
+
+  // Rosetten / Kupplungen als Knoten
+  if (isMod || isTube){
+    ctx.fillStyle = isMod ? '#B8C0C8' : '#8E979F';
+    for (var j4=0;j4<=m;j4++) for (var i4=0;i4<=n;i4++){
+      var kp = Q(x0+i4*f,j4*LIFT);
+      ctx.beginPath(); ctx.arc(kp.x,kp.y,lw(isMod?3.2:2.6),0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // Diagonalen (Aussenebene, jedes 5. Feld)
+  ctx.strokeStyle = isTube ? '#DDE2E6' : '#FFD166'; ctx.lineWidth = lw(2);
+  for (var j5=0;j5<m;j5++) for (var i5=0;i5<n;i5+=5){
+    var xa5 = x0+i5*f, xb5 = xa5+f, ya=j5*LIFT, yb5=(j5+1)*LIFT;
+    if (j5 % 2) line(Q(xa5,yb5), Q(xb5,ya)); else line(Q(xa5,ya), Q(xb5,yb5));
+  }
+
+  // Anker
+  if (S.anchors){
+    M.anchors.forEach(function(an){
+      var p = P(x0+an.i*f, an.h), q = Q(x0+an.i*f, an.h);
+      ctx.strokeStyle = '#3FD1C3'; ctx.lineWidth = lw(2); line(p,q);
+      ctx.beginPath(); ctx.arc(p.x,p.y,lw(4.5),0,Math.PI*2);
+      ctx.fillStyle = '#3FD1C3'; ctx.fill();
+      ctx.strokeStyle = '#0E1513'; ctx.lineWidth = lw(1.2); ctx.stroke();
+    });
+  }
+
+  // Beschriftung
+  if (S.labels){
+    ctx.globalAlpha = 1;
+    var t1 = TYPES[S.type].name + ' · ' + wName().split(' ')[0];
+    var t2 = n + ' Felder × ' + fmtM(f) + ' = ' + fmtM(M.L) + '   ·   ' + m + ' Lagen = ' + fmtM(Hs) + ' + 1,00 m Seitenschutz';
+    var t3 = 'Gerüstfläche ' + Math.round(M.area) + ' m²   ·   ' + M.anchors.length + ' Anker   ·   Richtwerte, keine Statik';
+    var fs = Math.max(lw(13), cw*0.021), pad = fs*0.8;
+    ctx.font = '600 ' + fs + 'px Instrument Sans, system-ui, sans-serif';
+    var wmax = Math.max(ctx.measureText(t1).width, ctx.measureText(t2).width, ctx.measureText(t3).width);
+    var bx = pad, bh = fs*3.6 + pad*1.6, by = ch - pad - bh, bw = wmax + pad*2;
+    ctx.fillStyle = 'rgba(14,21,19,.78)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx,by,bw,bh,lw(8)); else ctx.rect(bx,by,bw,bh);
+    ctx.fill();
+    ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillStyle='#FFD166'; ctx.fillText(t1, bx+pad, by+pad*0.8);
+    ctx.fillStyle='#fff'; ctx.font = '500 ' + fs + 'px Instrument Sans, system-ui, sans-serif';
+    ctx.fillText(t2, bx+pad, by+pad*0.8+fs*1.3);
+    ctx.fillStyle='#B7C4BF'; ctx.fillText(t3, bx+pad, by+pad*0.8+fs*2.6);
+  }
+  ctx.restore();
+}
+
+/* =====================================================================
+   Foto setzen / Kamera / Datei / Demo
+   ===================================================================== */
+var MAXPX = 1600;
+function setPhoto(src, w, h){
+  var sc = Math.min(1, MAXPX / Math.max(w, h));
+  var c = document.createElement('canvas');
+  c.width = Math.round(w*sc); c.height = Math.round(h*sc);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  S.photo = c; S.pw = c.width; S.ph = c.height;
+  canvas.width = c.width; canvas.height = c.height;
+  canvas.hidden = false; $('stageEmpty').hidden = true; $('stageTools').hidden = false;
+  S.points = [];
+  setStep(2); draw(); save();
+}
+
+function showNote(el, msg, cls){
+  el.hidden = !msg; el.className = 'note ' + (cls||'info');
+  el.innerHTML = msg ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg><span>' + msg + '</span>' : '';
+}
+
+function startCam(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showNote($('camNote'), 'Die Kamera-Schnittstelle ist in diesem Browser nicht verfügbar (HTTPS nötig). Bitte «Foto aus Galerie wählen» verwenden — dort öffnet sich auf dem Handy ebenfalls die Kamera.', 'err');
+    return;
+  }
+  stopCam();
+  navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080}}})
+    .then(function(st){
+      stream = st; video.srcObject = st;
+      video.hidden = false; canvas.hidden = true; $('stageEmpty').hidden = true; $('stageTools').hidden = true;
+      $('shutterBar').hidden = false; hint('Fassade frontal und ganz ins Bild nehmen, dann auslösen.');
+      showNote($('camNote'), '');
+    })
+    .catch(function(e){
+      showNote($('camNote'), 'Kamera konnte nicht gestartet werden (' + (e.name||'Fehler') + '). Bitte Zugriff erlauben oder «Foto aus Galerie wählen» nutzen.', 'err');
+    });
+}
+function stopCam(){
+  if (stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  video.srcObject = null; video.hidden = true; $('shutterBar').hidden = true; hint('');
+  if (S.photo){ canvas.hidden = false; $('stageTools').hidden = false; } else { $('stageEmpty').hidden = false; }
+}
+function shoot(){
+  if (!video.videoWidth) return;
+  setPhoto(video, video.videoWidth, video.videoHeight);
+  stopCam();
+}
+function loadFile(file){
+  if (!file) return;
+  var done = function(img, w, h){ setPhoto(img, w, h); };
+  if (window.createImageBitmap){
+    createImageBitmap(file, {imageOrientation:'from-image'}).then(function(bm){ done(bm, bm.width, bm.height); })
+      .catch(function(){ loadViaImg(file, done); });
+  } else loadViaImg(file, done);
+}
+function loadViaImg(file, done){
+  var url = URL.createObjectURL(file), img = new Image();
+  img.onload = function(){ done(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(url); };
+  img.onerror = function(){ toast('Bild konnte nicht geladen werden.'); };
+  img.src = url;
+}
+
+function demoBuilding(){
+  var w = 1400, h = 1000, c = document.createElement('canvas'); c.width=w; c.height=h;
+  var g = c.getContext('2d');
+  var sky = g.createLinearGradient(0,0,0,h*0.75); sky.addColorStop(0,'#9CC5E6'); sky.addColorStop(1,'#E6EEF3');
+  g.fillStyle = sky; g.fillRect(0,0,w,h);
+  g.fillStyle = '#8E9A93'; g.fillRect(0,h*0.82,w,h*0.18);           // Strasse
+  g.fillStyle = '#B9C1BB'; g.fillRect(0,h*0.80,w,h*0.03);           // Trottoir
+  // Nachbargebäude links/rechts
+  g.fillStyle = '#C8C2B6'; g.fillRect(0,h*0.30,w*0.16,h*0.52);
+  g.fillStyle = '#D9D3C6'; g.fillRect(w*0.84,h*0.36,w*0.16,h*0.46);
+  // Hauptfassade leicht perspektivisch
+  var quad = [{x:300,y:215},{x:1150,y:265},{x:1150,y:812},{x:300,y:830}];
+  var map = squareToQuad(quad);
+  function poly(pts, fill, stroke){ g.beginPath(); pts.forEach(function(p,i){ i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y); }); g.closePath(); if(fill){g.fillStyle=fill;g.fill();} if(stroke){g.strokeStyle=stroke;g.lineWidth=2;g.stroke();} }
+  // Dach
+  poly([{x:285,y:218},{x:725,y:100},{x:1165,y:268}], '#6B4A3A');
+  poly(quad, '#E8DCC8', '#B9A98E');
+  // Fenster 5 × 3 + Tür
+  for (var r=0;r<3;r++) for (var cI=0;cI<5;cI++){
+    var u0 = 0.08 + cI*0.18, v0 = 0.08 + r*0.28, u1 = u0+0.10, v1 = v0+0.16;
+    poly([map(u0,v0),map(u1,v0),map(u1,v1),map(u0,v1)], '#5D7E96', '#3F5768');
+    var um=(u0+u1)/2, vm=(v0+v1)/2;
+    g.strokeStyle='#D8E2EA'; g.lineWidth=2;
+    g.beginPath(); g.moveTo(map(um,v0).x,map(um,v0).y); g.lineTo(map(um,v1).x,map(um,v1).y); g.moveTo(map(u0,vm).x,map(u0,vm).y); g.lineTo(map(u1,vm).x,map(u1,vm).y); g.stroke();
+  }
+  poly([map(0.44,0.76),map(0.56,0.76),map(0.56,1),map(0.44,1)], '#6E4B36', '#4C3324');
+  // Sockel
+  poly([map(0,0.93),map(1,0.93),map(1,1),map(0,1)], '#B5ADA0');
+  setPhoto(c, w, h);
+  S.points = quad.map(function(p){ return {x:p.x, y:p.y}; });
+  S.W = 12; S.H = 8; $('inW').value = 12; $('inH').value = 8;
+  setStep(3); draw(); save(); toast('Demo-Gebäude geladen — Fassade ist bereits markiert.');
+}
+
+/* =====================================================================
+   Interaktion auf dem Canvas
+   ===================================================================== */
+function canvasPos(ev){
+  var r = canvas.getBoundingClientRect();
+  return {x:(ev.clientX - r.left) * canvas.width / r.width, y:(ev.clientY - r.top) * canvas.height / r.height};
+}
+function hitPoint(p){
+  var best=-1, bd=Infinity, tol = lw(22);
+  S.points.forEach(function(q,i){ var d=Math.hypot(q.x-p.x,q.y-p.y); if(d<tol && d<bd){bd=d;best=i;} });
+  return best;
+}
+canvas.addEventListener('pointerdown', function(ev){
+  if (!S.photo) return;
+  var p = canvasPos(ev);
+  var hi = hitPoint(p);
+  if (hi >= 0){ dragIdx = hi; canvas.setPointerCapture(ev.pointerId); draw(); return; }
+  if (S.step === 2 && S.points.length < 4){
+    S.points.push({x:Math.max(0,Math.min(canvas.width,p.x)), y:Math.max(0,Math.min(canvas.height,p.y))});
+    updatePts(); draw(); save();
+  }
+});
+canvas.addEventListener('pointermove', function(ev){
+  if (dragIdx < 0) return;
+  var p = canvasPos(ev);
+  S.points[dragIdx] = {x:Math.max(-canvas.width*0.2,Math.min(canvas.width*1.2,p.x)), y:Math.max(-canvas.height*0.2,Math.min(canvas.height*1.2,p.y))};
+  draw();
+});
+function endDrag(){ if (dragIdx >= 0){ dragIdx = -1; draw(); save(); updateKpis(); } }
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+/* =====================================================================
+   UI
+   ===================================================================== */
+var PTN = ['oben links','oben rechts','unten rechts','unten links'];
+function hint(msg, warn){
+  $('stageHint').hidden = !msg; $('stageHintText').textContent = msg || '';
+  $('stageHintText').className = warn ? 'warn' : '';
+}
+function updatePts(){
+  var k = S.points.length;
+  [].forEach.call(document.querySelectorAll('.pt'), function(el,i){
+    el.className = 'pt' + (i < k ? ' set' : (i === k && S.step===2 ? ' next' : ''));
+  });
+  $('btnToStep3').disabled = k < 4;
+  $('btnUndoPt').disabled = k === 0; $('btnResetPts').disabled = k === 0;
+  if (S.step === 2) hint(k < 4 ? 'Punkt ' + (k+1) + ' antippen: ' + PTN[k] : 'Fassade markiert — Punkte ziehen zum Korrigieren.');
+}
+function setStep(n){
+  S.step = n;
+  [].forEach.call(document.querySelectorAll('.steps button'), function(b){
+    var s = +b.dataset.step;
+    b.className = (s===n?'active':'') + (s<n?' done':'');
+    b.disabled = (s>=2 && !S.photo) || (s>=3 && S.points.length<4);
+  });
+  for (var i=1;i<=4;i++) $('panel-'+i).className = 'panel' + (i===n?' active':'');
+  if (n === 1){ hint(''); }
+  if (n === 2) updatePts();
+  if (n === 3){ hint('Gerüst wird live angepasst — Punkte lassen sich weiterhin ziehen.'); updateKpis(); }
+  if (n === 4){ hint(''); renderMaterial(); }
+  if (window.innerWidth < 960 && n > 1) window.scrollTo({top:0, behavior:'smooth'});
+  draw();
+}
+function fmtNum(v, d){ return v.toLocaleString('de-CH', {minimumFractionDigits:d||0, maximumFractionDigits:d||0}); }
+
+function kpiHtml(M, mat){
+  return '<div class="kpi"><small>Felder × Lagen</small><b>' + M.n + ' × ' + M.m + '</b></div>' +
+         '<div class="kpi"><small>Gerüst L × H</small><b>' + fmtNum(M.L,2) + ' × ' + fmtNum(M.Hs,2) + '<em>m</em></b></div>' +
+         '<div class="kpi"><small>Gerüstfläche</small><b>' + fmtNum(M.area,1) + '<em>m²</em></b></div>' +
+         '<div class="kpi"><small>Anker</small><b>' + M.anchors.length + '<em>Stk</em></b></div>' +
+         (mat ? '<div class="kpi"><small>Teile gesamt</small><b>' + fmtNum(mat.totalPcs) + '<em>Stk</em></b></div>' +
+                '<div class="kpi"><small>Gewicht ca.</small><b>' + fmtNum(mat.totalKg/1000,1) + '<em>t</em></b></div>' : '');
+}
+function updateKpis(){
+  if (S.points.length < 4) return;
+  var M = model();
+  $('kpis3').innerHTML = kpiHtml(M);
+  var warn = '';
+  if (M.Hs > 24) warn = '<div class="note err"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17h.01"/></svg><span>Gerüsthöhe über 24 m: ausserhalb der Regelausführung, Standsicherheitsnachweis im Einzelfall erforderlich.</span></div>';
+  else if (S.type === 'rohr' && M.Hs > 12) warn = '<div class="note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg><span>Rohr-Kupplungsgerüste über 12 m: Stiele ggf. doppelt, zusätzliche Aussteifung prüfen.</span></div>';
+  $('heightWarn').innerHTML = warn;
+}
+function renderMaterial(){
+  if (S.points.length < 4) return;
+  var M = model(), mat = materials(M);
+  $('matTitle').textContent = TYPES[S.type].name + ', ' + wName() + ', ' + M.n + ' Felder à ' + fmtM(M.f) + ', ' + M.m + ' Lagen — Vorkalkulation.';
+  $('kpis4').innerHTML = kpiHtml(M, mat);
+  var html = '<tr><th>Position</th><th>Stück</th><th>kg</th></tr>';
+  mat.rows.forEach(function(x){
+    if (x.grp) html += '<tr class="grp"><td colspan="3">' + x.grp + '</td></tr>';
+    else html += '<tr><td>' + x.name + (x.note ? '<small>' + x.note + '</small>' : '') + '</td><td>' + fmtNum(x.qty) + '</td><td>' + fmtNum(x.qty*x.kg) + '</td></tr>';
+  });
+  html += '<tr class="sum"><td>Gesamt (Richtgewicht)</td><td>' + fmtNum(mat.totalPcs) + '</td><td>' + fmtNum(mat.totalKg) + '</td></tr>';
+  $('matTable').innerHTML = html;
+  $('assumpList').innerHTML = mat.assump.map(function(a){ return '<li>' + a + '</li>'; }).join('');
+}
+function materialText(){
+  var M = model(), mat = materials(M), out = [];
+  out.push('GERÜSTPLANER — MATERIALLISTE (Richtwerte)');
+  out.push(TYPES[S.type].name + ', ' + wName() + ', Feldlänge ' + fmtM(M.f));
+  out.push('Fassade ' + fmtM(S.W) + ' × ' + fmtM(S.H) + ' → ' + M.n + ' Felder × ' + M.m + ' Lagen, Gerüst ' + fmtM(M.L) + ' × ' + fmtM(M.Hs) + ', ' + fmtNum(M.area,1) + ' m²');
+  out.push('');
+  mat.rows.forEach(function(x){
+    if (x.grp) out.push('## ' + x.grp);
+    else out.push((x.qty + ' Stk').padStart(9) + '  ' + x.name + (x.note ? '  (' + x.note + ')' : ''));
+  });
+  out.push('');
+  out.push('Gesamt: ' + mat.totalPcs + ' Teile, ca. ' + fmtNum(mat.totalKg) + ' kg');
+  out.push('');
+  out.push('Annahmen:'); mat.assump.forEach(function(a){ out.push('- ' + a); });
+  out.push('Keine Statik — Ausführung nach Aufbau- und Verwendungsanleitung des Herstellers.');
+  return out.join('\n');
+}
+var toastT;
+function toast(msg){ var t=$('toast'); t.textContent=msg; t.className='toast show'; clearTimeout(toastT); toastT=setTimeout(function(){ t.className='toast'; }, 2200); }
+
+/* ---------- Eingaben ---------- */
+function readInputs(){
+  S.W = Math.max(1, parseFloat($('inW').value) || 1);
+  S.H = Math.max(1, parseFloat($('inH').value) || 1);
+  S.field = parseFloat($('inField').value); S.width = parseFloat($('inWidth').value);
+  S.deckAll = $('inDeckAll').checked; S.depth = parseFloat($('inDepth').value);
+  S.opacity = parseFloat($('inOpacity').value); S.labels = $('inLabels').checked; S.anchors = $('inAnchors').checked;
+  draw(); updateKpis(); if (S.step===4) renderMaterial(); save();
+}
+function setType(t){
+  S.type = t;
+  [].forEach.call(document.querySelectorAll('#typeGrid button'), function(b){ b.className = b.dataset.type===t ? 'active' : ''; });
+  $('typeDesc').textContent = TYPES[t].desc;
+  var sel = $('inField'), cur = S.field;
+  sel.innerHTML = TYPES[t].fields.map(function(v){ return '<option value="'+v+'">'+fmtM(v)+'</option>'; }).join('');
+  var best = TYPES[t].fields.reduce(function(a,b){ return Math.abs(b-cur)<Math.abs(a-cur)?b:a; });
+  sel.value = String(best);
+  readInputs();
+}
+['inW','inH','inField','inWidth','inDeckAll','inDepth','inOpacity','inLabels','inAnchors'].forEach(function(id){
+  $(id).addEventListener('input', readInputs); $(id).addEventListener('change', readInputs);
+});
+[].forEach.call(document.querySelectorAll('#typeGrid button'), function(b){ b.addEventListener('click', function(){ setType(b.dataset.type); }); });
+[].forEach.call(document.querySelectorAll('.steps button'), function(b){ b.addEventListener('click', function(){ if(!b.disabled) setStep(+b.dataset.step); }); });
+
+$('btnCam').addEventListener('click', startCam);
+$('btnShutter').addEventListener('click', shoot);
+$('btnCancelCam').addEventListener('click', stopCam);
+$('btnFlip').addEventListener('click', function(){ facing = facing==='environment' ? 'user' : 'environment'; startCam(); });
+$('fileInput').addEventListener('change', function(e){ loadFile(e.target.files[0]); e.target.value=''; });
+$('btnDemo').addEventListener('click', demoBuilding);
+$('btnNewPhoto').addEventListener('click', function(){ setStep(1); window.scrollTo({top:0}); });
+$('btnToggleOverlay').addEventListener('click', function(){ S.overlay = !S.overlay; this.style.opacity = S.overlay ? '1' : '.55'; draw(); });
+$('btnUndoPt').addEventListener('click', function(){ S.points.pop(); updatePts(); setStep(2); save(); });
+$('btnResetPts').addEventListener('click', function(){ S.points = []; updatePts(); setStep(2); save(); });
+$('btnToStep3').addEventListener('click', function(){ setStep(3); });
+$('btnToStep4').addEventListener('click', function(){ setStep(4); });
+$('btnPrint').addEventListener('click', function(){ hideHandles = true; draw(); window.print(); hideHandles = false; draw(); });
+$('btnCopy').addEventListener('click', function(){
+  var txt = materialText();
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function(){ toast('Materialliste kopiert.'); }, function(){ fallbackCopy(txt); });
+  else fallbackCopy(txt);
+});
+function fallbackCopy(txt){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('Materialliste kopiert.'); }catch(e){ toast('Kopieren nicht möglich.'); } document.body.removeChild(ta); }
+$('btnPng').addEventListener('click', function(){
+  hideHandles = true; draw();
+  canvas.toBlob(function(blob){
+    hideHandles = false; draw();
+    if (!blob){ toast('Export fehlgeschlagen.'); return; }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'geruest-' + TYPES[S.type].name.toLowerCase().replace(/[^a-z]/g,'') + '-' + new Date().toISOString().slice(0,10) + '.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    toast('Bild gespeichert.');
+  }, 'image/png');
+});
+window.addEventListener('afterprint', function(){ hideHandles = false; draw(); });
+
+/* ---------- Speichern / Laden ---------- */
+var saveT;
+function save(){
+  clearTimeout(saveT);
+  saveT = setTimeout(function(){
+    try{
+      var data = {W:S.W,H:S.H,type:S.type,field:S.field,width:S.width,deckAll:S.deckAll,depth:S.depth,opacity:S.opacity,labels:S.labels,anchors:S.anchors,points:S.points};
+      if (S.photo){
+        var c = document.createElement('canvas'), sc = Math.min(1, 1200/Math.max(S.pw,S.ph));
+        c.width = Math.round(S.pw*sc); c.height = Math.round(S.ph*sc);
+        c.getContext('2d').drawImage(S.photo,0,0,c.width,c.height);
+        data.photo = c.toDataURL('image/jpeg', 0.8); data.pw = S.pw; data.ph = S.ph;
+      }
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }catch(e){ /* Speicher voll oder gesperrt: still ignorieren */ }
+  }, 300);
+}
+function load(){
+  var d; try{ d = JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
+  if (!d) return;
+  ['W','H','type','field','width','deckAll','depth','opacity','labels','anchors'].forEach(function(k){ if (d[k]!==undefined) S[k]=d[k]; });
+  $('inW').value=S.W; $('inH').value=S.H; $('inWidth').value=String(S.width); $('inDeckAll').checked=S.deckAll;
+  $('inDepth').value=S.depth; $('inOpacity').value=S.opacity; $('inLabels').checked=S.labels; $('inAnchors').checked=S.anchors;
+  if (TYPES[S.type]) setType(S.type);
+  if (d.photo){
+    var img = new Image();
+    img.onload = function(){
+      // Punkte sind in Originalpixeln gespeichert; Foto wurde ggf. verkleinert abgelegt
+      var sc = img.naturalWidth / (d.pw || img.naturalWidth);
+      setPhoto(img, img.naturalWidth, img.naturalHeight);
+      S.points = (d.points||[]).map(function(p){ return {x:p.x*sc, y:p.y*sc}; });
+      setStep(S.points.length === 4 ? 3 : 2); draw();
+    };
+    img.src = d.photo;
+  }
+}
+
+/* ---------- Start ---------- */
+setType(S.type);
+load();
+setStep(S.step);
+})();
+</script>
+</body>
+</html>
